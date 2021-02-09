@@ -47,5 +47,4 @@ if __name__ == '__main__':
     values = data2int(values, qi_idx[2:5])
 
     for i in qi_idx:
-        print(Counter(values[:, i]))
-
+        print(list(np.unique(values[:, i])))
