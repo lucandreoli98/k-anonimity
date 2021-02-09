@@ -17,6 +17,5 @@ def remove_ei(remove_fields: np.ndarray, remove_values: np.ndarray):
 
 if __name__ == '__main__':
     [fields, values] = import_csv()
-    print(list(fields))
     [fields, values] = remove_ei(fields, values)
-    print(list(fields))
+    print(values[0:2, :])
