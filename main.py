@@ -1,6 +1,3 @@
-import math
-from typing import List
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -23,9 +20,20 @@ def data2int(data_values: np.ndarray, idx=None):
     if idx is None:
         idx = []
     for j in idx:
-        for i in range(data_values.shape[0]):
-            if (type(data_values[i, j])) is not float:
-                data_values[i, j] = int(str(data_values[i, j]).replace('-', ''))
+        for k in range(data_values.shape[0]):
+            if type(data_values[k, j]) is not float:
+                data_values[k, j] = int(str(data_values[k, j]).replace('-', ''))
+    return data_values
+
+
+def generalize_data(data_to_generalize: np.ndarray, qi_data_idx_to_gen: int):
+    for j in range(data_to_generalize.shape[0]):
+        if type(data_to_generalize[j, qi_data_idx_to_gen]) is not float:
+            if data_to_generalize[j, qi_data_idx_to_gen] in range(10000, 100000000):
+                data_to_generalize[j, qi_data_idx_to_gen] = int(np.trunc(data_to_generalize[j, qi_data_idx_to_gen] / 100))
+            elif data_to_generalize[j, qi_data_idx_to_gen] in range(10000):
+                data_to_generalize[j, qi_data_idx_to_gen] = np.nan
+    return data_to_generalize
 
 
 if __name__ == '__main__':
@@ -33,8 +41,11 @@ if __name__ == '__main__':
     [fields, values] = remove_ei(fields, values)
 
     records_number = values.shape[0]
-    print(fields)
+    fields_number = fields.shape[0]
     qi_idx = [0, 1, 2, 3, 4]
-    data_idx = [2, 3, 4]
-    data2int(values, data_idx)
+    print(fields)
+    values = data2int(values, qi_idx[2:5])
+
+    for i in qi_idx:
+        print(Counter(values[:, i]))
 
