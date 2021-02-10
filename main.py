@@ -18,6 +18,7 @@ def import_csv_dataset():
 def clean_values(values_to_clean: np.ndarray):
     """
     Cleans string values of dataset to improve string operations and comparison without leads damage to the meaning
+
     :param values_to_clean: Entire dataset including 'Last Name' and 'First Name' fields
     :return: Cleaned string values ('Job title' [:,2], 'Department' [:,3]) from char_rem specified special chars
     """
@@ -29,10 +30,41 @@ def clean_values(values_to_clean: np.ndarray):
     return values_to_clean
 
 
+def remove_ei(remove_fields: np.ndarray, remove_values: np.ndarray):
+    """
+    Removes the Explicit Identifiers on dataset to be anonymized
+
+    :param remove_fields: Entire dataset fields
+    :param remove_values: Entire dataset values
+    :return: the fields and values without the EI
+    """
+    remove_fields = remove_fields[2:10]
+    remove_values = remove_values[:, 2:10]
+    return remove_fields, remove_values
+
+
+def data2int(data_values: np.ndarray, idx=None):
+    """
+    Convert the data values in integer like the following example: 1998-05-27 -> 19980527
+
+    :param data_values: Entire dataset
+    :param idx: Array of indices of data fields of the dataset
+    :return: Entire dataset with data values converted
+    """
+    if idx is None:
+        idx = []
+    for j in idx:
+        for k in range(data_values.shape[0]):
+            if type(data_values[k, j]) is not float:
+                data_values[k, j] = int(str(data_values[k, j]).replace('-', ''))
+    return data_values
+
+
 def create_string_generalize_hierarchy(values_to_get_generalize: np.ndarray, idx: int):
     """
     Creates the generalization hierarchy for 'Job Title' or 'Department' field supposing that the first word of the
     value generalize it
+
     :param values_to_get_generalize: Entire dataset
     :param idx: Index of 'Job Title' or 'Department' field
     :return: A matrix composed by rows, one for each domain value (of the field specified in the idx param), with the
@@ -50,40 +82,13 @@ def create_string_generalize_hierarchy(values_to_get_generalize: np.ndarray, idx
     return gen_file
 
 
-def remove_ei(remove_fields: np.ndarray, remove_values: np.ndarray):
-    """
-    Removes the Explicit Identifiers on dataset to be anonymized
-    :param remove_fields: Entire dataset fields
-    :param remove_values: Entire dataset values
-    :return: the fields and values without the EI
-    """
-    remove_fields = remove_fields[2:10]
-    remove_values = remove_values[:, 2:10]
-    return remove_fields, remove_values
-
-
-def data2int(data_values: np.ndarray, idx=None):
-    """
-    Convert the data values in integer like the following example: 1998-05-27 -> 19980527
-    :param data_values: Entire dataset
-    :param idx: Array of indices of data fields of the dataset
-    :return: Entire dataset with data values converted
-    """
-    if idx is None:
-        idx = []
-    for j in idx:
-        for k in range(data_values.shape[0]):
-            if type(data_values[k, j]) is not float:
-                data_values[k, j] = int(str(data_values[k, j]).replace('-', ''))
-    return data_values
-
-
 def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int):
     """
     Generalize the data values in the following way:    (19980527)
     the first time is called it simply delete the day   (199805)
     the second time it also remove the month            (1998)
-    the third time it put * in the data values          (*)
+    the third time it put 'nan' in the data values          (nan)
+
     :param values_to_gen: Entire dataset
     :param qi_data_idx_to_gen: Index of the data field to be generalized
     :return: Entire dataset with data values generalized
@@ -94,6 +99,31 @@ def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int):
                 values_to_gen[j, qi_data_idx_to_gen] = int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
             elif values_to_gen[j, qi_data_idx_to_gen] in range(10000):
                 values_to_gen[j, qi_data_idx_to_gen] = np.nan
+    return values_to_gen
+
+
+def string_generalize(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, level_of_generalization: int):
+    """
+    Generalizes the string values: 'Job Title' or 'Department' with specified level of generalization
+    by appropriate param
+
+    :param values_to_gen: Entire dataset
+    :param qi_string_idx_to_gen: 'Job Title' (qi_string_idx_to_gen = 0) or 'Department' (qi_string_idx_to_gen = 1)
+    :param level_of_generalization: Specify level of generalization (1 or 2)
+    :return: Entire dataset with generalized values
+    """
+    if qi_string_idx_to_gen in range(0, 2):
+        if level_of_generalization in range(1, 3):
+            hierarchy = []
+            if qi_string_idx_to_gen == 0:
+                hierarchy = create_string_generalize_hierarchy(values, qi_string_idx_to_gen)
+            elif qi_string_idx_to_gen == 1:
+                hierarchy = create_string_generalize_hierarchy(values, qi_string_idx_to_gen)
+
+            for j in range(hierarchy.shape[0]):
+                indices = np.where(values_to_gen[:, qi_string_idx_to_gen] == hierarchy[j, level_of_generalization-1])
+                values_to_gen[indices, qi_string_idx_to_gen] = hierarchy[j, level_of_generalization]
+
     return values_to_gen
 
 
@@ -108,9 +138,9 @@ if __name__ == '__main__':
     # Convert data values in integer
     values = data2int(values, qi_idx[2:5])
 
-    # Creation of 'Job title' and 'Department' generalization hierarchy
-    job_title_hierarchy = create_string_generalize_hierarchy(values, 0)
-    department_hierarchy = create_string_generalize_hierarchy(values, 1)
-
     # Check
     print(fields)
+
+    print(values[0:20, 0])
+    values = string_generalize(values, 0, 1)
+    print(values[0:20, 0])
