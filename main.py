@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import re
+import matplotlib.pyplot as plt
 
 
 def import_csv_dataset():
@@ -123,10 +124,44 @@ def string_generalize(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
             for j in range(values_to_gen.shape[0]):
                 values_to_gen[j, qi_string_idx_to_gen] = values_to_gen[j, qi_string_idx_to_gen].split()[0]
             for j in range(hierarchy.shape[0]):
-                indices = np.where(values_to_gen[:, qi_string_idx_to_gen] == hierarchy[j, level_of_generalization-1])
+                indices = np.where(values_to_gen[:, qi_string_idx_to_gen] == hierarchy[j, level_of_generalization - 1])
                 values_to_gen[indices, qi_string_idx_to_gen] = hierarchy[j, level_of_generalization]
 
     return values_to_gen
+
+
+def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
+    """
+    Plot histogram of frequencies of values in the dataset to have an overview of the distribution of them
+    In case of data type the domain range is from 1965 to 2025
+    In case of earnings type the domain is free interpretation of plot function that cover all values
+
+    :param data: Entire dataset
+    :param labels: Fields of dataset for write the title of plots
+    :param idx: Index of field of the dataset considered for plot the data frequency (2-7)
+    """
+    if idx in range(5, 8):
+        plt.figure()
+        plt.hist(data[:, idx], bins=250)
+        plt.title(labels[idx] + " distribution")
+        plt.ylim([0, 10])
+        plt.show()
+    elif idx in range(2, 5):
+        data_of_data = []
+        for j in range(data.shape[0]):
+            if type(data[j, idx]) is not float:
+                if j == 0:
+                    data_of_data = data[j, idx]
+                else:
+                    data_of_data = np.append(data_of_data, data[j, idx])
+
+        plt.figure()
+        plt.hist(np.uint16(data_of_data / 10000), bins=np.unique(np.uint16(data_of_data/10000)).shape[0])
+        plt.title(labels[idx] + " distribution")
+        plt.ylim([0, 10])
+        plt.xlim([1965, 2025])
+        plt.grid()
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -142,3 +177,5 @@ if __name__ == '__main__':
 
     # Check
     print(fields)
+
+    #plot_graphs(values, fields, 6)
