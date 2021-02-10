@@ -98,12 +98,19 @@ def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int):
 
 
 if __name__ == '__main__':
+    # Quasi-identifier indices
     qi_idx = [0, 1, 2, 3, 4]
+
+    # Import dataset and remove EI
     [fields, values] = import_csv_dataset()
     [fields, values] = remove_ei(fields, values)
+
+    # Convert data values in integer
+    values = data2int(values, qi_idx[2:5])
+
+    # Creation of 'Job title' and 'Department' generalization hierarchy
     job_title_hierarchy = create_string_generalize_hierarchy(values, 0)
     department_hierarchy = create_string_generalize_hierarchy(values, 1)
-    records_number = values.shape[0]
-    fields_number = fields.shape[0]
+
+    # Check
     print(fields)
-    values = data2int(values, qi_idx[2:5])
