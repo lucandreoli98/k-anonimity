@@ -87,7 +87,7 @@ def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int):
     Generalize the data values in the following way:    (19980527)
     the first time is called it simply delete the day   (199805)
     the second time it also remove the month            (1998)
-    the third time it put 'nan' in the data values          (nan)
+    the third time it put 'nan' in the data values      (nan)
 
     :param values_to_gen: Entire dataset
     :param qi_data_idx_to_gen: Index of the data field to be generalized
@@ -142,4 +142,3 @@ if __name__ == '__main__':
 
     # Check
     print(fields)
-
