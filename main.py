@@ -120,6 +120,8 @@ def string_generalize(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
             elif qi_string_idx_to_gen == 1:
                 hierarchy = create_string_generalize_hierarchy(values, qi_string_idx_to_gen)
 
+            for j in range(values_to_gen.shape[0]):
+                values_to_gen[j, qi_string_idx_to_gen] = values_to_gen[j, qi_string_idx_to_gen].split()[0]
             for j in range(hierarchy.shape[0]):
                 indices = np.where(values_to_gen[:, qi_string_idx_to_gen] == hierarchy[j, level_of_generalization-1])
                 values_to_gen[indices, qi_string_idx_to_gen] = hierarchy[j, level_of_generalization]
@@ -141,6 +143,3 @@ if __name__ == '__main__':
     # Check
     print(fields)
 
-    print(values[0:20, 0])
-    values = string_generalize(values, 0, 1)
-    print(values[0:20, 0])
