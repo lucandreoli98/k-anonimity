@@ -4,10 +4,15 @@ import matplotlib.pyplot as plt
 from collections import Counter
 
 
-def import_csv():
+def import_csv_dataset():
     import_fields = pd.read_csv('redacted-2020-june-30-wprdc-.csv', header=None).to_numpy()[0, :]
     import_values = pd.read_csv('redacted-2020-june-30-wprdc-.csv').to_numpy()
     return import_fields, import_values
+
+
+def import_csv_to_generalize():
+    import_gen_file = pd.read_csv('redacted-2020-june-30-wprdc-.csv').to_numpy()
+    return
 
 
 def remove_ei(remove_fields: np.ndarray, remove_values: np.ndarray):
@@ -26,18 +31,18 @@ def data2int(data_values: np.ndarray, idx=None):
     return data_values
 
 
-def generalize_data(data_to_generalize: np.ndarray, qi_data_idx_to_gen: int):
-    for j in range(data_to_generalize.shape[0]):
-        if type(data_to_generalize[j, qi_data_idx_to_gen]) is not float:
-            if data_to_generalize[j, qi_data_idx_to_gen] in range(10000, 100000000):
-                data_to_generalize[j, qi_data_idx_to_gen] = int(np.trunc(data_to_generalize[j, qi_data_idx_to_gen] / 100))
-            elif data_to_generalize[j, qi_data_idx_to_gen] in range(10000):
-                data_to_generalize[j, qi_data_idx_to_gen] = np.nan
-    return data_to_generalize
+def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int):
+    for j in range(values_to_gen.shape[0]):
+        if type(values_to_gen[j, qi_data_idx_to_gen]) is not float:
+            if values_to_gen[j, qi_data_idx_to_gen] in range(10000, 100000000):
+                values_to_gen[j, qi_data_idx_to_gen] = int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
+            elif values_to_gen[j, qi_data_idx_to_gen] in range(10000):
+                values_to_gen[j, qi_data_idx_to_gen] = np.nan
+    return values_to_gen
 
 
 if __name__ == '__main__':
-    [fields, values] = import_csv()
+    [fields, values] = import_csv_dataset()
     [fields, values] = remove_ei(fields, values)
 
     records_number = values.shape[0]
