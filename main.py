@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import re
 import matplotlib.pyplot as plt
+from collections import Counter
 
 
 def import_csv_dataset():
@@ -94,12 +95,13 @@ def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int):
     :param qi_data_idx_to_gen: Index of the data field to be generalized
     :return: Entire dataset with data values generalized
     """
-    for j in range(values_to_gen.shape[0]):
-        if type(values_to_gen[j, qi_data_idx_to_gen]) is not float:
-            if values_to_gen[j, qi_data_idx_to_gen] in range(10000, 100000000):
-                values_to_gen[j, qi_data_idx_to_gen] = int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
-            elif values_to_gen[j, qi_data_idx_to_gen] in range(10000):
-                values_to_gen[j, qi_data_idx_to_gen] = np.nan
+    if qi_data_idx_to_gen in range(2, 5):
+        for j in range(values_to_gen.shape[0]):
+            if type(values_to_gen[j, qi_data_idx_to_gen]) is not float:
+                if values_to_gen[j, qi_data_idx_to_gen] in range(10000, 100000000):
+                    values_to_gen[j, qi_data_idx_to_gen] = int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
+                elif values_to_gen[j, qi_data_idx_to_gen] in range(10000):
+                    values_to_gen[j, qi_data_idx_to_gen] = np.nan
     return values_to_gen
 
 
@@ -133,18 +135,19 @@ def string_generalize(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
 def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
     """
     Plot histogram of frequencies of values in the dataset to have an overview of the distribution of them
-    In case of data type the domain range is from 1965 to 2025
-    In case of earnings type the domain is free interpretation of plot function that cover all values
+    In case of data type the x label is from 1965 to 2025
+    In case of earnings type the x label is free interpretation of plot function that cover all values
 
     :param data: Entire dataset
     :param labels: Fields of dataset for write the title of plots
-    :param idx: Index of field of the dataset considered for plot the data frequency (2-7)
+    :param idx: Index of field of the dataset considered for plot the data frequency (0-7)
     """
-    if idx in range(5, 8):
+    if idx in range(0, 2):
         plt.figure()
-        plt.hist(data[:, idx], bins=250)
+        plt.hist(data[:, idx], bins=np.unique(data[:, idx]).shape[0])
         plt.title(labels[idx] + " distribution")
         plt.ylim([0, 10])
+        # plt.xticks(range(np.unique(data[:, idx]).shape[0]))
         plt.show()
     elif idx in range(2, 5):
         data_of_data = []
@@ -156,12 +159,29 @@ def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
                     data_of_data = np.append(data_of_data, data[j, idx])
 
         plt.figure()
-        plt.hist(np.uint16(data_of_data / 10000), bins=np.unique(np.uint16(data_of_data/10000)).shape[0])
+        plt.hist(np.uint16(data_of_data / 10000), bins=np.unique(np.uint16(data_of_data / 10000)).shape[0])
         plt.title(labels[idx] + " distribution")
         plt.ylim([0, 10])
         plt.xlim([1965, 2025])
         plt.grid()
         plt.show()
+    elif idx in range(5, 8):
+        plt.figure()
+        plt.hist(data[:, idx], bins=250)
+        plt.title(labels[idx] + " distribution")
+        plt.ylim([0, 10])
+        plt.show()
+
+
+def check_k_anonymity(data: np.ndarray, k: int, qi_indices=None):
+    print(Counter(str(e) for e in data[:, qi_indices]))
+    # print(Counter(str(e) for e in data[:, qi_indices]).keys())
+
+    occurrences = list(Counter(str(e) for e in data[:, qi_indices]).values())
+    for j in range(len(occurrences)):
+        if occurrences[j] < k:
+            return False
+    return True
 
 
 if __name__ == '__main__':
@@ -178,4 +198,19 @@ if __name__ == '__main__':
     # Check
     print(fields)
 
-    #plot_graphs(values, fields, 6)
+    # print(check_k_anonymity(values, 0, qi_idx))
+    '''
+    values = generalize_data(values, 2)
+    values = generalize_data(values, 3)
+    values = generalize_data(values, 4)
+    values = generalize_data(values, 2)
+    values = generalize_data(values, 3)
+    values = generalize_data(values, 3)
+    values = generalize_data(values, 4)
+    values = generalize_data(values, 4)
+    values = string_generalize(values, 0, 1)
+    values = string_generalize(values, 1, 2)
+    '''
+
+    plot_graphs(values, fields, 1)
+    print(check_k_anonymity(values, 3, qi_idx))
