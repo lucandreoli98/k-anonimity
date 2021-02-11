@@ -147,7 +147,6 @@ def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
         plt.hist(data[:, idx], bins=np.unique(data[:, idx]).shape[0])
         plt.title(labels[idx] + " distribution")
         plt.ylim([0, 10])
-        # plt.xticks(range(np.unique(data[:, idx]).shape[0]))
         plt.show()
     elif idx in range(2, 5):
         data_of_data = []
@@ -174,8 +173,15 @@ def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
 
 
 def check_k_anonymity(data: np.ndarray, k: int, qi_indices=None):
+    """
+    Checks if the dataset respect k-anonymity property
+
+    :param data: Entire dataset
+    :param k: k-anonymity level
+    :param qi_indices: Indices of Quasi-Identifier
+    :return: True if dataset respect the k-anonymity, or False
+    """
     print(Counter(str(e) for e in data[:, qi_indices]))
-    # print(Counter(str(e) for e in data[:, qi_indices]).keys())
 
     occurrences = list(Counter(str(e) for e in data[:, qi_indices]).values())
     for j in range(len(occurrences)):
