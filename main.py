@@ -45,6 +45,19 @@ def remove_ei(remove_fields: np.ndarray, remove_values: np.ndarray):
     return remove_fields, remove_values
 
 
+def remove_unuseful(remove_fields: np.ndarray, remove_values: np.ndarray):
+    """
+    Removes the unuseful Sensitive Data on dataset to be anonymized
+
+    :param remove_fields: Entire dataset fields
+    :param remove_values: Entire dataset values
+    :return: the fields and values without unuseful SD
+    """
+    remove_fields = remove_fields[[0, 1, 2, 3, 4, 6]]
+    remove_values = remove_values[:, [0, 1, 2, 3, 4, 6]]
+    return remove_fields, remove_values
+
+
 def data2int(data_values: np.ndarray, idx=None):
     """
     Convert the data values in integer like the following example: 1998-05-27 -> 19980527
@@ -164,7 +177,7 @@ def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
         plt.xlim([1965, 2025])
         plt.grid()
         plt.show()
-    elif idx in range(5, 8):
+    elif idx == 5:
         plt.figure()
         plt.hist(data[:, idx], bins=250)
         plt.title(labels[idx] + " distribution")
@@ -197,6 +210,7 @@ if __name__ == '__main__':
     # Import dataset and remove EI
     [fields, values] = import_csv_dataset()
     [fields, values] = remove_ei(fields, values)
+    [fields, values] = remove_unuseful(fields, values)
 
     # Convert data values in integer
     values = data2int(values, qi_idx[2:5])
@@ -208,15 +222,20 @@ if __name__ == '__main__':
     '''
     values = generalize_data(values, 2)
     values = generalize_data(values, 3)
+    values = generalize_data(values, 2)
     values = generalize_data(values, 4)
     values = generalize_data(values, 2)
     values = generalize_data(values, 3)
     values = generalize_data(values, 3)
     values = generalize_data(values, 4)
     values = generalize_data(values, 4)
-    values = string_generalize(values, 0, 1)
+    values = string_generalize(values, 0, 2)
     values = string_generalize(values, 1, 2)
     '''
+    values = string_generalize(values, 0, 1)
 
-    plot_graphs(values, fields, 1)
-    print(check_k_anonymity(values, 3, qi_idx))
+    # occurrences = list(Counter(str(e) for e in values[:, 2]).values())
+    # print(occurrences.count(1))
+    for i in range(0, 6):
+        plot_graphs(values, fields, i)
+    # print(check_k_anonymity(values, 3, qi_idx))
