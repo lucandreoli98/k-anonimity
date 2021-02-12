@@ -157,8 +157,8 @@ def string_generalize(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
 
 def check_job_title_occ(data: np.ndarray):
     [arr, count] = np.unique(data[:, 0], return_counts=True)
-    print(list(arr[np.where(count < 5)]))
-    print((arr[np.where(count < 5)].shape[0]))
+    print(list(arr[np.where(count < 10)]))
+    print((arr[np.where(count < 10)].shape[0]))
     print(list(zip(list(arr[np.where(count > 10)]), list(count[np.where(count > 10)]))))
     # print(list(count[np.where(count > 10)]))
 
@@ -238,6 +238,8 @@ if __name__ == '__main__':
 
     values = string_generalize(values, 0, 1)
 
-    print(list(np.unique(values[:, 0])))
+    # print(list(np.unique(values[:, 0])))
 
     check_job_title_occ(values)
+
+    plot_graphs(values, fields, 0)
