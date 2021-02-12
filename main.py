@@ -24,7 +24,7 @@ def clean_values(values_to_clean: np.ndarray):
     :param values_to_clean: Entire dataset including 'Last Name' and 'First Name' fields
     :return: Cleaned string values ('Job title' [:,2], 'Department' [:,3]) from char_rem specified special chars
     """
-    char_rem = "!@#$%^&*()[]{};:.,/<>?|`~-=_+"
+    char_rem = "!@#$%^&*()[]{};:.,/<>?|`~-=_+'"
     for j in range(values_to_clean.shape[0]):
         for k in range(2, 4):
             for c in char_rem:
@@ -88,7 +88,11 @@ def create_string_generalize_hierarchy(values_to_get_generalize: np.ndarray, idx
     gen_file = []
     values_generalized = np.unique(values_to_get_generalize[:, idx])
     for j in range(values_generalized.shape[0]):
-        tmp = np.append(np.append(values_generalized[j], values_generalized[j].split(" ")[0]), '*')
+        if len(values_generalized[j].split(" ")[0]) < 3:
+            if len(values_generalized[j].split(" ")) > 1:
+                tmp = np.append(np.append(values_generalized[j], values_generalized[j].split(" ")[0]+ " "+ values_generalized[j].split(" ")[1]), '*')
+        else:
+            tmp = np.append(np.append(values_generalized[j], values_generalized[j].split(" ")[0]), '*')
         if j == 0:
             gen_file = tmp
         else:
@@ -143,6 +147,15 @@ def string_generalize(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
                 values_to_gen[indices, qi_string_idx_to_gen] = hierarchy[j, level_of_generalization]
 
     return values_to_gen
+
+
+def check_job_title_occ(data: np.ndarray):
+    first_level = string_generalize(data, 0, 1)
+    [arr, count] = np.unique(first_level[:, 0], return_counts=True)
+    print(list(arr[np.where(count < 4)]))
+    print((arr[np.where(count < 4)].shape[0]))
+    print(list(zip(list(arr[np.where(count > 10)]), list(count[np.where(count > 10)]))))
+    # print(list(count[np.where(count > 10)]))
 
 
 def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
@@ -217,6 +230,9 @@ if __name__ == '__main__':
 
     # Check
     print(fields)
+    check_job_title_occ(values)
+
+    print(list(np.unique(values[:, 0])))
 
     # print(check_k_anonymity(values, 0, qi_idx))
     '''
