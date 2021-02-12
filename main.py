@@ -86,7 +86,12 @@ def create_string_generalize_hierarchy(values_to_get_generalize: np.ndarray, idx
         following structure: ['Not generalized','1st generalization level','Last generalization level']
     """
     gen_file = []
-    import_fixed_values = pd.read_csv('fix_jobs.csv', header=None).to_numpy()
+    import_fixed_values = None
+    if idx == 0:
+        import_fixed_values = pd.read_csv('fix_jobs.csv', header=None).to_numpy()
+    elif idx == 1:
+        import_fixed_values = pd.read_csv('fix_department.csv', header=None).to_numpy()
+
     values_generalized = np.unique(values_to_get_generalize[:, idx])
     for j in range(values_generalized.shape[0]):
         if len(values_generalized[j].split(" ")[0]) < 4 and len(values_generalized[j].split(" ")) > 1:
@@ -94,7 +99,7 @@ def create_string_generalize_hierarchy(values_to_get_generalize: np.ndarray, idx
         else:
             first_level_gen = values_generalized[j].split(" ")[0]
 
-        if first_level_gen in import_fixed_values[:, 0] and idx == 0:
+        if first_level_gen in import_fixed_values[:, 0]:
             first_level_gen = import_fixed_values[np.where(first_level_gen == import_fixed_values[:, 0]), 1]
 
         tmp = np.append(np.append(values_generalized[j], first_level_gen), '*')
@@ -113,7 +118,8 @@ def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int):
     Generalize the data values in the following way:    (19980527)
     the first time is called it simply delete the day   (199805)
     the second time it also remove the month            (1998)
-    the third time it put 'nan' in the data values      (nan)
+    the third time it take the decade                   (90)
+    the fourth time it put 'nan' in the data values     (nan)
 
     :param values_to_gen: Entire dataset
     :param qi_data_idx_to_gen: Index of the data field to be generalized
@@ -124,12 +130,15 @@ def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int):
             if type(values_to_gen[j, qi_data_idx_to_gen]) is not float:
                 if values_to_gen[j, qi_data_idx_to_gen] in range(10000, 100000000):
                     values_to_gen[j, qi_data_idx_to_gen] = int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
-                elif values_to_gen[j, qi_data_idx_to_gen] in range(10000):
+                elif values_to_gen[j, qi_data_idx_to_gen] in range(100, 10000):
+                    values_to_gen[j, qi_data_idx_to_gen] = int(np.trunc((values_to_gen[j, qi_data_idx_to_gen] % 100) / 10)*10)
+                elif values_to_gen[j, qi_data_idx_to_gen] in range(100):
                     values_to_gen[j, qi_data_idx_to_gen] = np.nan
+
     return values_to_gen
 
 
-def string_generalize(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, level_of_generalization: int):
+def generalize_string(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, level_of_generalization: int):
     """
     Generalizes the string values: 'Job Title' or 'Department' with specified level of generalization
     by appropriate param
@@ -155,11 +164,11 @@ def string_generalize(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
     return values_to_gen
 
 
-def check_job_title_occ(data: np.ndarray):
-    [arr, count] = np.unique(data[:, 0], return_counts=True)
-    print(list(arr[np.where(count < 10)]))
-    print((arr[np.where(count < 10)].shape[0]))
-    print(list(zip(list(arr[np.where(count > 10)]), list(count[np.where(count > 10)]))))
+def check_strings_occ(data: np.ndarray, idx: int):
+    [arr, count] = np.unique(data[:, idx], return_counts=True)
+    print(list(arr[np.where(count < 20)]))
+    print((arr[np.where(count < 20)].shape[0]))
+    print(list(zip(list(arr[np.where(count > 20)]), list(count[np.where(count > 20)]))))
     # print(list(count[np.where(count > 10)]))
 
 
@@ -235,11 +244,25 @@ if __name__ == '__main__':
 
     # Check
     print(fields)
+    '''
+    values = generalize_data(values, 2)
+    values = generalize_data(values, 2)
+    values = generalize_data(values, 2)
+    values = generalize_data(values, 3)
+    values = generalize_data(values, 3)
+    values = generalize_data(values, 3)
+    values = generalize_data(values, 4)
+    values = generalize_data(values, 4)
+    values = generalize_data(values, 4)
 
-    values = string_generalize(values, 0, 1)
+    values = generalize_string(values, 0, 1)
+    values = generalize_string(values, 1, 1)
+    
+    check_k_anonymity(values, 10, qi_idx)
+    '''
 
-    # print(list(np.unique(values[:, 0])))
+    # print((values[0:30, :]))
 
-    check_job_title_occ(values)
+    values = generalize_string(values, 0, 1)
 
-    plot_graphs(values, fields, 0)
+    check_strings_occ(values, 0)
