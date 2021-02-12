@@ -24,7 +24,7 @@ def clean_values(values_to_clean: np.ndarray):
     :param values_to_clean: Entire dataset including 'Last Name' and 'First Name' fields
     :return: Cleaned string values ('Job title' [:,2], 'Department' [:,3]) from char_rem specified special chars
     """
-    char_rem = "!@#$%^&*()[]{};:.,/<>?|`~-=_+'"
+    char_rem = "!@#$%^*()[]{};:.,/<>?|`~-=_+'\\"
     for j in range(values_to_clean.shape[0]):
         for k in range(2, 4):
             for c in char_rem:
@@ -86,17 +86,24 @@ def create_string_generalize_hierarchy(values_to_get_generalize: np.ndarray, idx
         following structure: ['Not generalized','1st generalization level','Last generalization level']
     """
     gen_file = []
+    import_fixed_values = pd.read_csv('fix_jobs.csv', header=None).to_numpy()
     values_generalized = np.unique(values_to_get_generalize[:, idx])
     for j in range(values_generalized.shape[0]):
-        if len(values_generalized[j].split(" ")[0]) < 3:
-            if len(values_generalized[j].split(" ")) > 1:
-                tmp = np.append(np.append(values_generalized[j], values_generalized[j].split(" ")[0]+ " "+ values_generalized[j].split(" ")[1]), '*')
+        if len(values_generalized[j].split(" ")[0]) < 4 and len(values_generalized[j].split(" ")) > 1:
+            first_level_gen = values_generalized[j].split(" ")[0] + " " + values_generalized[j].split(" ")[1]
         else:
-            tmp = np.append(np.append(values_generalized[j], values_generalized[j].split(" ")[0]), '*')
+            first_level_gen = values_generalized[j].split(" ")[0]
+
+        if first_level_gen in import_fixed_values[:, 0] and idx == 0:
+            first_level_gen = import_fixed_values[np.where(first_level_gen == import_fixed_values[:, 0]), 1]
+
+        tmp = np.append(np.append(values_generalized[j], first_level_gen), '*')
+
         if j == 0:
             gen_file = tmp
         else:
             gen_file = np.concatenate((gen_file, tmp))
+
     gen_file = np.reshape(gen_file, (values_generalized.shape[0], 3))
     return gen_file
 
@@ -141,7 +148,14 @@ def string_generalize(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
                 hierarchy = create_string_generalize_hierarchy(values, qi_string_idx_to_gen)
 
             for j in range(values_to_gen.shape[0]):
-                values_to_gen[j, qi_string_idx_to_gen] = values_to_gen[j, qi_string_idx_to_gen].split()[0]
+
+                if len(values_to_gen[j, qi_string_idx_to_gen].split()[0]) < 4 \
+                        and len(values_to_gen[j, qi_string_idx_to_gen].split()) > 1:
+                    values_to_gen[j, qi_string_idx_to_gen] \
+                        = values_to_gen[j, qi_string_idx_to_gen].split()[0] + " " + values_to_gen[j, qi_string_idx_to_gen].split()[1]
+                else:
+                    values_to_gen[j, qi_string_idx_to_gen] = values_to_gen[j, qi_string_idx_to_gen].split()[0]
+
             for j in range(hierarchy.shape[0]):
                 indices = np.where(values_to_gen[:, qi_string_idx_to_gen] == hierarchy[j, level_of_generalization - 1])
                 values_to_gen[indices, qi_string_idx_to_gen] = hierarchy[j, level_of_generalization]
@@ -150,8 +164,7 @@ def string_generalize(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
 
 
 def check_job_title_occ(data: np.ndarray):
-    first_level = string_generalize(data, 0, 1)
-    [arr, count] = np.unique(first_level[:, 0], return_counts=True)
+    [arr, count] = np.unique(data[:, 0], return_counts=True)
     print(list(arr[np.where(count < 4)]))
     print((arr[np.where(count < 4)].shape[0]))
     print(list(zip(list(arr[np.where(count > 10)]), list(count[np.where(count > 10)]))))
@@ -230,28 +243,7 @@ if __name__ == '__main__':
 
     # Check
     print(fields)
-    check_job_title_occ(values)
 
-    print(list(np.unique(values[:, 0])))
-
-    # print(check_k_anonymity(values, 0, qi_idx))
-    '''
-    values = generalize_data(values, 2)
-    values = generalize_data(values, 3)
-    values = generalize_data(values, 2)
-    values = generalize_data(values, 4)
-    values = generalize_data(values, 2)
-    values = generalize_data(values, 3)
-    values = generalize_data(values, 3)
-    values = generalize_data(values, 4)
-    values = generalize_data(values, 4)
-    values = string_generalize(values, 0, 2)
-    values = string_generalize(values, 1, 2)
-    '''
     values = string_generalize(values, 0, 1)
 
-    # occurrences = list(Counter(str(e) for e in values[:, 2]).values())
-    # print(occurrences.count(1))
-    for i in range(0, 6):
-        plot_graphs(values, fields, i)
-    # print(check_k_anonymity(values, 3, qi_idx))
+    print(list(np.unique(values[:, 0])))
