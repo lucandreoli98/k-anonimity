@@ -140,33 +140,25 @@ def string_generalize(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
     :return: Entire dataset with generalized values
     """
     if qi_string_idx_to_gen in range(0, 2):
-        if level_of_generalization in range(1, 3):
+        if level_of_generalization == 1:
             hierarchy = []
             if qi_string_idx_to_gen == 0:
                 hierarchy = create_string_generalize_hierarchy(values, qi_string_idx_to_gen)
             elif qi_string_idx_to_gen == 1:
                 hierarchy = create_string_generalize_hierarchy(values, qi_string_idx_to_gen)
 
-            for j in range(values_to_gen.shape[0]):
-
-                if len(values_to_gen[j, qi_string_idx_to_gen].split()[0]) < 4 \
-                        and len(values_to_gen[j, qi_string_idx_to_gen].split()) > 1:
-                    values_to_gen[j, qi_string_idx_to_gen] \
-                        = values_to_gen[j, qi_string_idx_to_gen].split()[0] + " " + values_to_gen[j, qi_string_idx_to_gen].split()[1]
-                else:
-                    values_to_gen[j, qi_string_idx_to_gen] = values_to_gen[j, qi_string_idx_to_gen].split()[0]
-
             for j in range(hierarchy.shape[0]):
                 indices = np.where(values_to_gen[:, qi_string_idx_to_gen] == hierarchy[j, level_of_generalization - 1])
                 values_to_gen[indices, qi_string_idx_to_gen] = hierarchy[j, level_of_generalization]
-
+        elif level_of_generalization == 2:
+            values_to_gen[:, qi_string_idx_to_gen] = '*'
     return values_to_gen
 
 
 def check_job_title_occ(data: np.ndarray):
     [arr, count] = np.unique(data[:, 0], return_counts=True)
-    print(list(arr[np.where(count < 4)]))
-    print((arr[np.where(count < 4)].shape[0]))
+    print(list(arr[np.where(count < 5)]))
+    print((arr[np.where(count < 5)].shape[0]))
     print(list(zip(list(arr[np.where(count > 10)]), list(count[np.where(count > 10)]))))
     # print(list(count[np.where(count > 10)]))
 
@@ -247,3 +239,5 @@ if __name__ == '__main__':
     values = string_generalize(values, 0, 1)
 
     print(list(np.unique(values[:, 0])))
+
+    check_job_title_occ(values)
