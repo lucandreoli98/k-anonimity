@@ -89,7 +89,6 @@ def create_string_generalize_hierarchy(values_to_get_generalize: np.ndarray, idx
     import_fixed_values = None
     if idx == 0:
         import_fixed_values = pd.read_csv('fix_jobs.csv', header=None).to_numpy()
-        print(import_fixed_values.shape[0])
     elif idx == 1:
         import_fixed_values = pd.read_csv('fix_department.csv', header=None).to_numpy()
 
@@ -167,11 +166,10 @@ def generalize_string(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
 
 def check_strings_occ(data: np.ndarray, idx: int):
     [arr, count] = np.unique(data[:, idx], return_counts=True)
-    print(list(arr[np.where(count < 20)]))
-    print((arr[np.where(count < 20)].shape[0]))
-    print(list(zip(list(arr[np.where(count < 20)]), list(count[np.where(count < 20)]))))
+    print(list(arr[np.where(count < 30)]))
+    print((arr[np.where(count < 30)].shape[0]))
+    print(list(zip(list(arr[np.where(count < 30)]), list(count[np.where(count < 30)]))))
     # print(list(count[np.where(count > 10)]))
-    print((data[np.where(count < 20)].shape[0]))
 
 
 def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
@@ -246,7 +244,7 @@ if __name__ == '__main__':
 
     # Check
     print(fields)
-    '''
+
     values = generalize_data(values, 2)
     values = generalize_data(values, 2)
     values = generalize_data(values, 2)
@@ -261,7 +259,7 @@ if __name__ == '__main__':
     values = generalize_string(values, 1, 1)
     
     check_k_anonymity(values, 10, qi_idx)
-    '''
+
 
     # print((values[0:30, :]))
 
