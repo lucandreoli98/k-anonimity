@@ -89,6 +89,7 @@ def create_string_generalize_hierarchy(values_to_get_generalize: np.ndarray, idx
     import_fixed_values = None
     if idx == 0:
         import_fixed_values = pd.read_csv('fix_jobs.csv', header=None).to_numpy()
+        print(import_fixed_values.shape[0])
     elif idx == 1:
         import_fixed_values = pd.read_csv('fix_department.csv', header=None).to_numpy()
 
@@ -158,7 +159,7 @@ def generalize_string(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
 
             for j in range(hierarchy.shape[0]):
                 indices = np.where(values_to_gen[:, qi_string_idx_to_gen] == hierarchy[j, level_of_generalization - 1])
-                values_to_gen[indices, qi_string_idx_to_gen] = hierarchy[j, level_of_generalization]
+                values_to_gen[indices, qi_string_idx_to_gen] = hierarchy[j, level_of_generalization].strip()
         elif level_of_generalization == 2:
             values_to_gen[:, qi_string_idx_to_gen] = '*'
     return values_to_gen
@@ -168,8 +169,9 @@ def check_strings_occ(data: np.ndarray, idx: int):
     [arr, count] = np.unique(data[:, idx], return_counts=True)
     print(list(arr[np.where(count < 20)]))
     print((arr[np.where(count < 20)].shape[0]))
-    print(list(zip(list(arr[np.where(count > 20)]), list(count[np.where(count > 20)]))))
+    print(list(zip(list(arr[np.where(count < 20)]), list(count[np.where(count < 20)]))))
     # print(list(count[np.where(count > 10)]))
+    print((data[np.where(count < 20)].shape[0]))
 
 
 def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
@@ -186,7 +188,7 @@ def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
         plt.figure()
         plt.hist(data[:, idx], bins=np.unique(data[:, idx]).shape[0])
         plt.title(labels[idx] + " distribution")
-        plt.ylim([0, 10])
+        plt.ylim([0, 100])
         plt.show()
     elif idx in range(2, 5):
         data_of_data = []
@@ -200,7 +202,7 @@ def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
         plt.figure()
         plt.hist(np.uint16(data_of_data / 10000), bins=np.unique(np.uint16(data_of_data / 10000)).shape[0])
         plt.title(labels[idx] + " distribution")
-        plt.ylim([0, 10])
+        plt.ylim([0, 100])
         plt.xlim([1965, 2025])
         plt.grid()
         plt.show()
@@ -208,7 +210,7 @@ def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
         plt.figure()
         plt.hist(data[:, idx], bins=250)
         plt.title(labels[idx] + " distribution")
-        plt.ylim([0, 10])
+        plt.ylim([0, 100])
         plt.show()
 
 
@@ -265,4 +267,5 @@ if __name__ == '__main__':
 
     values = generalize_string(values, 0, 1)
 
-    check_strings_occ(values, 0)
+    # check_strings_occ(values, 0)
+    plot_graphs(values, fields, 0)
