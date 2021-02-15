@@ -156,9 +156,9 @@ def generalize_string(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
         if level_of_generalization == 1:
             hierarchy = []
             if qi_string_idx_to_gen == 0:
-                hierarchy = create_string_generalize_hierarchy(values, qi_string_idx_to_gen)
+                hierarchy = create_string_generalize_hierarchy(values_to_gen, qi_string_idx_to_gen)
             elif qi_string_idx_to_gen == 1:
-                hierarchy = create_string_generalize_hierarchy(values, qi_string_idx_to_gen)
+                hierarchy = create_string_generalize_hierarchy(values_to_gen, qi_string_idx_to_gen)
 
             for j in range(hierarchy.shape[0]):
                 indices = np.where(values_to_gen[:, qi_string_idx_to_gen] == hierarchy[j, level_of_generalization - 1])
@@ -225,13 +225,90 @@ def check_k_anonymity(data: np.ndarray, k: int, qi_indices=None):
     :param qi_indices: Indices of Quasi-Identifier
     :return: True if dataset respect the k-anonymity, or False
     """
-    print(Counter(str(e) for e in data[:, qi_indices]))
+    # print(Counter(str(e) for e in data[:, qi_indices]))
 
     occurrences = list(Counter(str(e) for e in data[:, qi_indices]).values())
     for j in range(len(occurrences)):
         if occurrences[j] < k:
             return False
     return True
+
+
+def start_tables_generation(qi_indices=None):
+    max_level = 0
+    bias = [0, 3, 6, 11, 16]
+    nodes_table = []
+    edges_table = []
+    for qi in qi_indices:
+        if qi in range(0, 2):
+            max_level = 2
+        elif qi in range(2, 5):
+            max_level = 4
+
+        for level in range(max_level + 1):
+            tmp_node = np.append(np.append(level + bias[qi] + 1, qi), level)
+            if level == 0 and qi == 0:
+                nodes_table = tmp_node
+            else:
+                nodes_table = np.concatenate((nodes_table, tmp_node))
+
+    nodes_table = np.reshape(nodes_table, (int(nodes_table.shape[0] / 3), 3))
+    for j in range(nodes_table.shape[0] - 1):
+        if nodes_table[j, 1] == nodes_table[j + 1, 1]:
+            tmp_edge = np.append(nodes_table[j, 0], nodes_table[j + 1, 0])
+            if j == 0:
+                edges_table = tmp_edge
+            else:
+                edges_table = np.concatenate((edges_table, tmp_edge))
+
+    edges_table = np.reshape(edges_table, (int(edges_table.shape[0] / 2), 2))
+    return nodes_table, edges_table
+
+
+def find_roots(table_of_nodes: np.ndarray, table_of_edges: np.ndarray):
+    rts = []
+    for j in range(table_of_nodes.shape[0]):
+        flag = True
+        for k in range(table_of_edges.shape[0]):
+            if int(table_of_edges[k, 1]) == int(table_of_nodes[j, 0]):
+                flag = False
+        if flag:
+            if j == 0:
+                rts = table_of_nodes[j, :]
+            else:
+                rts = np.concatenate((rts, table_of_nodes[j, :]))
+    rts = np.reshape(rts, (int(rts.shape[0] / 3), 3))
+    return rts
+
+
+def insert_roots_into_queue(rt: np.ndarray):
+    q = []
+    for j in range(rt.shape[0]):
+        if j == 0:
+            q = rt[j, :]
+        else:
+            q = np.concatenate((q, rt[j, :]))
+    q = np.reshape(q, (int(q.shape[0] / 3), 3))
+    return q
+
+
+def mark_all_direct_generalizations(id_node: int, marks: np.ndarray, edges: np.ndarray):
+    for j in range(edges.shape[0]):
+        if edges[j, 0] == id_node:
+            marks = np.append(marks, mark_all_direct_generalizations(edges[j, 1], marks, edges))
+    return id_node
+
+
+def insert_direct_generalizations_of_node_into_queue(id_node: int, q: np.ndarray, edges: np.ndarray, nodes: np.ndarray):
+    for j in range(edges.shape[0]):
+        if edges[j, 0] == id_node:
+            print(q)
+            print(list(np.where(edges[j, 1] == nodes[:, 0])))
+            print(nodes[np.where(edges[j, 1] == nodes[:, 0]), :][0])
+            q = np.concatenate((q, nodes[np.where(edges[j, 1] == nodes[:, 0]), :][0]))
+            print(q)
+            return insert_direct_generalizations_of_node_into_queue(edges[j, 1], q, edges, nodes)
+    return q
 
 
 if __name__ == '__main__':
@@ -249,29 +326,22 @@ if __name__ == '__main__':
     # Check
     print(fields)
 
-    values = generalize_data(values, 2)
-    values = generalize_data(values, 2)
-    values = generalize_data(values, 2)
-    values = generalize_data(values, 3)
-    values = generalize_data(values, 3)
-    values = generalize_data(values, 3)
-    values = generalize_data(values, 3)
-    values = generalize_data(values, 4)
-    values = generalize_data(values, 4)
-    values = generalize_data(values, 4)
-    values = generalize_data(values, 4)
+    # Algorithm
+    [C, E] = start_tables_generation(qi_idx)
 
-    values = generalize_string(values, 0, 1)
-    values = generalize_string(values, 1, 1)
+    # for i in range(fields.shape[0]):
+    S = C
+    roots = find_roots(C, E)
+    queue = insert_roots_into_queue(roots)
 
-    print(np.unique(values[:, 1]))
-    check_k_anonymity(values, 10, qi_idx)
-
-    '''
-    # print((values[0:30, :]))
-
-    values = generalize_string(values, 0, 1)
-
-    check_strings_occ(values, 0)
-    # plot_graphs(values, fields, 0)
-    '''
+    marked = []
+    while queue.shape[0] > 0:
+        node = queue[0, :]
+        queue = np.delete(queue, 0, 0)
+        if not node[0] in marked:
+            if node[0] in np.int_(roots[:, 0]):
+                if check_k_anonymity(values, 2, node[1]):
+                    marked = mark_all_direct_generalizations(node[0], np.array(marked), E)
+                else:
+                    insert_direct_generalizations_of_node_into_queue(node[0], queue, E, S)
+                    S = np.delete(S, np.where(S[:, 0] == node[0]), 0)
