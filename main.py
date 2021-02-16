@@ -431,9 +431,7 @@ if __name__ == '__main__':
 
         if not node[0] in marked:
             idx_node, levels_node = get_node_indices_and_levels(node)
-            print(values[0:10, 2])
             dataset = generalize_values(values, idx_node, levels_node)
-            print(values[0:10, 2])
 
             if check_k_anonymity(dataset, 2, idx_node):
                 marked = mark_all_direct_generalizations(node[0], np.array(marked, dtype='int'), E)
