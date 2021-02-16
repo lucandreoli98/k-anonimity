@@ -116,7 +116,7 @@ def create_string_generalize_hierarchy(values_to_get_generalize: np.ndarray, idx
     return gen_file
 
 
-def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int):
+def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int, lv: int):
     """
     Generalize the data values in the following way:    (19980527)
     the first time is called it simply delete the day   (199805)
@@ -126,18 +126,40 @@ def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int):
 
     :param values_to_gen: Entire dataset
     :param qi_data_idx_to_gen: Index of the data field to be generalized
+    :param lv: Level to generalize data
     :return: Entire dataset with data values generalized
     """
     if qi_data_idx_to_gen in range(2, 5):
-        for j in range(values_to_gen.shape[0]):
-            if type(values_to_gen[j, qi_data_idx_to_gen]) is not float:
-                if values_to_gen[j, qi_data_idx_to_gen] in range(10000, 100000000):
-                    values_to_gen[j, qi_data_idx_to_gen] = int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
-                elif values_to_gen[j, qi_data_idx_to_gen] in range(100, 10000):
-                    values_to_gen[j, qi_data_idx_to_gen] = int(
-                        np.trunc((values_to_gen[j, qi_data_idx_to_gen] % 100) / 10) * 10)
-                elif values_to_gen[j, qi_data_idx_to_gen] in range(100):
-                    values_to_gen[j, qi_data_idx_to_gen] = np.nan
+        if lv in range(0, 5):
+            for j in range(values_to_gen.shape[0]):
+                if type(values_to_gen[j, qi_data_idx_to_gen]) is not float:
+                    if lv == 1:
+                        if values_to_gen[j, qi_data_idx_to_gen] in range(1000000, 100000000):
+                            values_to_gen[j, qi_data_idx_to_gen] = int(
+                                np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
+                    if lv == 2:
+                        if values_to_gen[j, qi_data_idx_to_gen] in range(1000000, 100000000):
+                            values_to_gen[j, qi_data_idx_to_gen] = int(
+                                np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 10000))
+                        elif values_to_gen[j, qi_data_idx_to_gen] in range(10000, 1000000):
+                            values_to_gen[j, qi_data_idx_to_gen] = int(
+                                np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
+                    if lv == 3:
+                        if values_to_gen[j, qi_data_idx_to_gen] in range(1000000, 100000000):
+                            values_to_gen[j, qi_data_idx_to_gen] = int(
+                                np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 10000))
+                            values_to_gen[j, qi_data_idx_to_gen] = int(
+                                np.trunc((values_to_gen[j, qi_data_idx_to_gen] % 100) / 10) * 10)
+                        elif values_to_gen[j, qi_data_idx_to_gen] in range(10000, 1000000):
+                            values_to_gen[j, qi_data_idx_to_gen] = int(
+                                np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
+                            values_to_gen[j, qi_data_idx_to_gen] = int(
+                                np.trunc((values_to_gen[j, qi_data_idx_to_gen] % 100) / 10) * 10)
+                        elif values_to_gen[j, qi_data_idx_to_gen] in range(100, 10000):
+                            values_to_gen[j, qi_data_idx_to_gen] = int(
+                                np.trunc((values_to_gen[j, qi_data_idx_to_gen] % 100) / 10) * 10)
+                    if lv == 4:
+                        values_to_gen[j, qi_data_idx_to_gen] = np.nan
 
     return values_to_gen
 
@@ -297,15 +319,13 @@ def generalize_values(data: np.ndarray, qi_indices: np.ndarray, levels: np.ndarr
         if qi_indices in range(0, 2):
             data = generalize_string(data, int(qi_indices), int(levels))
         if qi_indices in range(2, 5):
-            for k in range(int(levels)):
-                data = generalize_data(data, int(qi_indices))
+            data = generalize_data(data, int(qi_indices), int(levels))
     elif qi_indices.shape[0] > 1:
         for j in qi_indices:
             if j in range(0, 2):
                 data = generalize_string(data, j, levels[j])
             if j in range(2, 5):
-                for k in range(levels[j]):
-                    data = generalize_data(data, j)
+                data = generalize_data(data, j, int(levels[j]))
 
     return data
 
@@ -313,14 +333,15 @@ def generalize_values(data: np.ndarray, qi_indices: np.ndarray, levels: np.ndarr
 def get_node_indices_and_levels(nd: np.ndarray):
     indices = []
     lvs = []
-    for j in range(1, nd.shape[0]-1):
+    for j in range(1, nd.shape[0] - 1):
         if j == 1:
             indices = nd[j]
-            lvs = nd[j+1]
+            lvs = nd[j + 1]
         elif j % 2 != 0 and j > 1:
             indices = np.append(indices, nd[j])
         elif j % 2 == 0 and j > 2:
-            lvs = np.append(lvs, nd[j+1])
+            lvs = np.append(lvs, nd[j + 1])
+        print("Index Level")
         print(indices, lvs)
     return indices, lvs
 
@@ -402,9 +423,11 @@ if __name__ == '__main__':
 
     while queue.shape[0] > 0:
         node = queue[0, :]
-        print(node)
-        queue = np.delete(queue, 0, 0)
+        print("-------------------------------------------------------------")
+        print("Queue:")
         print(queue)
+        print("Extracted node: ", node)
+        queue = np.delete(queue, 0, 0)
 
         if not node[0] in marked:
             idx_node, levels_node = get_node_indices_and_levels(node)
