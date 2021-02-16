@@ -225,7 +225,7 @@ def check_k_anonymity(data: np.ndarray, k: int, qi_indices=None):
     :param qi_indices: Indices of Quasi-Identifier
     :return: True if dataset respect the k-anonymity, or False
     """
-    # print(Counter(str(e) for e in data[:, qi_indices]))
+    print(Counter(str(e) for e in data[:, qi_indices]))
 
     occurrences = list(Counter(str(e) for e in data[:, qi_indices]).values())
     for j in range(len(occurrences)):
@@ -277,7 +277,7 @@ def find_roots(table_of_nodes: np.ndarray, table_of_edges: np.ndarray):
                 rts = table_of_nodes[j, :]
             else:
                 rts = np.concatenate((rts, table_of_nodes[j, :]))
-    rts = np.reshape(rts, (int(rts.shape[0] / 3), 3))
+    rts = np.reshape(rts, (int(rts.shape[0] / table_of_nodes.shape[1]), table_of_nodes.shape[1]))
     return rts
 
 
@@ -288,27 +288,91 @@ def insert_roots_into_queue(rt: np.ndarray):
             q = rt[j, :]
         else:
             q = np.concatenate((q, rt[j, :]))
-    q = np.reshape(q, (int(q.shape[0] / 3), 3))
+    q = np.reshape(q, (int(q.shape[0] / rt.shape[1]), rt.shape[1]))
     return q
+
+
+def generalize_values(data: np.ndarray, qi_indices: np.ndarray, levels: np.ndarray):
+    if np.isscalar(qi_indices):
+        if qi_indices in range(0, 2):
+            data = generalize_string(data, int(qi_indices), int(levels))
+        if qi_indices in range(2, 5):
+            for k in range(int(levels)):
+                data = generalize_data(data, int(qi_indices))
+    elif qi_indices.shape[0] > 1:
+        for j in qi_indices:
+            if j in range(0, 2):
+                data = generalize_string(data, j, levels[j])
+            if j in range(2, 5):
+                for k in range(levels[j]):
+                    data = generalize_data(data, j)
+
+    return data
+
+
+def get_node_indices_and_levels(nd: np.ndarray):
+    indices = []
+    lvs = []
+    for j in range(1, nd.shape[0]-1):
+        if j == 1:
+            indices = nd[j]
+            lvs = nd[j+1]
+        elif j % 2 != 0 and j > 1:
+            indices = np.append(indices, nd[j])
+        elif j % 2 == 0 and j > 2:
+            lvs = np.append(lvs, nd[j+1])
+        print(indices, lvs)
+    return indices, lvs
 
 
 def mark_all_direct_generalizations(id_node: int, marks: np.ndarray, edges: np.ndarray):
     for j in range(edges.shape[0]):
         if edges[j, 0] == id_node:
-            marks = np.append(marks, mark_all_direct_generalizations(edges[j, 1], marks, edges))
-    return id_node
+            marks = np.append(marks, edges[j, 1])
+    return marks
 
 
 def insert_direct_generalizations_of_node_into_queue(id_node: int, q: np.ndarray, edges: np.ndarray, nodes: np.ndarray):
     for j in range(edges.shape[0]):
         if edges[j, 0] == id_node:
-            print(q)
-            print(list(np.where(edges[j, 1] == nodes[:, 0])))
-            print(nodes[np.where(edges[j, 1] == nodes[:, 0]), :][0])
             q = np.concatenate((q, nodes[np.where(edges[j, 1] == nodes[:, 0]), :][0]))
-            print(q)
-            return insert_direct_generalizations_of_node_into_queue(edges[j, 1], q, edges, nodes)
     return q
+
+
+def table_split(nodes_table: np.ndarray, edges_table: np.ndarray):
+    idx_to_split = [0]
+    current_attr = nodes_table[0, 1]
+    if nodes_table.shape[1] > 3:
+        for k in range(3, nodes_table.shape[1]):
+            if k % 2 != 0:
+                current_attr = np.append(current_attr, nodes_table[0, k])
+
+    for j in range(1, nodes_table.shape[0]):
+        attr = nodes_table[j, 1]
+        if nodes_table.shape[1] > 3:
+            for k in range(3, nodes_table.shape[1]):
+                if k % 2 != 0:
+                    attr = np.append(attr, nodes_table[j, k])
+
+        if current_attr != attr:
+            idx_to_split = np.append(idx_to_split, j)
+            current_attr = attr
+
+    idx_to_split = np.delete(idx_to_split, 0)
+    idx_to_split = np.append(idx_to_split, nodes_table.shape[0])
+
+    splitted_tables = []
+    prev = 0
+    for j in idx_to_split:
+        if j == idx_to_split[0]:
+            print(pd.DataFrame(nodes_table[0:j, :], columns=['id', 'dim', 'index']))
+            # splitted_tables = pd.DataFrame(nodes_table[0:j, :], columns=['id', 'dim', 'index'])
+            prev = j
+        else:
+            print(pd.DataFrame(nodes_table[prev:j, :], columns=['id', 'dim', 'index']))
+            # splitted_tables = np.concatenate((splitted_tables, pd.DataFrame(nodes_table[prev:j, :], columns=['id', 'dim', 'index'])), axis=1)
+            prev = j
+    return splitted_tables
 
 
 if __name__ == '__main__':
@@ -328,20 +392,33 @@ if __name__ == '__main__':
 
     # Algorithm
     [C, E] = start_tables_generation(qi_idx)
-
+    print(C)
     # for i in range(fields.shape[0]):
     S = C
     roots = find_roots(C, E)
     queue = insert_roots_into_queue(roots)
 
     marked = []
+
     while queue.shape[0] > 0:
         node = queue[0, :]
+        print(node)
         queue = np.delete(queue, 0, 0)
+        print(queue)
+
         if not node[0] in marked:
-            if node[0] in np.int_(roots[:, 0]):
-                if check_k_anonymity(values, 2, node[1]):
-                    marked = mark_all_direct_generalizations(node[0], np.array(marked), E)
-                else:
-                    insert_direct_generalizations_of_node_into_queue(node[0], queue, E, S)
-                    S = np.delete(S, np.where(S[:, 0] == node[0]), 0)
+            idx_node, levels_node = get_node_indices_and_levels(node)
+            print(values[0:10, 2])
+            dataset = generalize_values(values, idx_node, levels_node)
+            print(values[0:10, 2])
+
+            if check_k_anonymity(dataset, 2, idx_node):
+                marked = mark_all_direct_generalizations(node[0], np.array(marked, dtype='int'), E)
+            else:
+                queue = insert_direct_generalizations_of_node_into_queue(node[0], queue, E, S)
+                S = np.delete(S, np.where(S[:, 0] == node[0]), 0)
+                E = np.delete(E, np.where(E[:, 0] == node[0]), 0)
+                E = np.delete(E, np.where(E[:, 1] == node[0]), 0)
+    print(S)
+    print(table_split(S, E))
+    # C, E = graph_generation(S, E)
