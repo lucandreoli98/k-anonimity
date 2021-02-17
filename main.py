@@ -3,6 +3,7 @@ import pandas as pd
 import re
 import matplotlib.pyplot as plt
 from collections import Counter
+import pandasql as ps
 
 
 def import_csv_dataset():
@@ -396,8 +397,10 @@ def table_split(nodes_table: np.ndarray):
 
 
 def graph_generation(nodes: dict, edges: np.ndarray):
+    edges = pd.DataFrame(edges, columns=['start', 'end'])
     dataframes = [nodes[n] for n in nodes]
     result_dataframes = {}
+    last_index = dataframes[len(dataframes)-1]['id'].iloc[-1]
     n = 0
     if dataframes[0].shape[1] == 3:
         for j in range(len(dataframes)):
@@ -405,9 +408,21 @@ def graph_generation(nodes: dict, edges: np.ndarray):
                 dataframes[j]['key'] = 1
                 dataframes[k]['key'] = 1
                 result_dataframes[n] = pd.merge(dataframes[j], dataframes[k], on='key').drop("key", 1)
+                result_dataframes[n]['Sum'] = result_dataframes[n].iloc[:, [2, 5]].sum(axis=1)
+                result_dataframes[n] = result_dataframes[n].sort_values('Sum')
+                result_dataframes[n] = result_dataframes[n].iloc[:, :-1]
+                result_dataframes[n]['NewID'] = range(last_index + 1, len(result_dataframes[n]) + last_index + 1)
+                last_index = len(result_dataframes[n]) + last_index
+                tmp_rd = result_dataframes[n]
+                ps.sqldf('SELECT p.NewID, q.NewID FROM result tmp_rd p, tmp_rd q, edges e, edges f WHERE (e.start = p.id_x and e.end = q.id_x and f.start = p.id_y and f.end = q.id_y) or (e.start = p.id_x and e.end = q.id_x and p.id_y = q.id_y) or (e.start = p.id_y and e.end = q.id_y and p.id_x = q.id_x)')
+
                 n = n + 1
+
     for j in range(len(result_dataframes)):
         print(result_dataframes[j])
+
+
+    print(edges)
     return nodes, edges
 
 
