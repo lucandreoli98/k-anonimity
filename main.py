@@ -3,7 +3,6 @@ import pandas as pd
 import re
 import matplotlib.pyplot as plt
 from collections import Counter
-import pandasql as ps
 
 
 def import_csv_dataset():
@@ -397,14 +396,15 @@ def table_split(nodes_table: np.ndarray):
 
 
 def graph_generation(nodes: dict, edges: np.ndarray):
-    edges = pd.DataFrame(edges, columns=['start', 'end'])
+    result_nodes = []
+    result_edges = []
     dataframes = [nodes[n] for n in nodes]
     result_dataframes = {}
-    last_index = dataframes[len(dataframes)-1]['id'].iloc[-1]
+    last_index = dataframes[len(dataframes) - 1]['id'].iloc[-1]
     n = 0
     if dataframes[0].shape[1] == 3:
         for j in range(len(dataframes)):
-            for k in range(j+1, len(dataframes)):
+            for k in range(j + 1, len(dataframes)):
                 dataframes[j]['key'] = 1
                 dataframes[k]['key'] = 1
                 result_dataframes[n] = pd.merge(dataframes[j], dataframes[k], on='key').drop("key", 1)
@@ -413,15 +413,63 @@ def graph_generation(nodes: dict, edges: np.ndarray):
                 result_dataframes[n] = result_dataframes[n].iloc[:, :-1]
                 result_dataframes[n]['NewID'] = range(last_index + 1, len(result_dataframes[n]) + last_index + 1)
                 last_index = len(result_dataframes[n]) + last_index
-                # tmp_rd = result_dataframes[n]
-                # ps.sqldf('SELECT p.NewID, q.NewID FROM result tmp_rd p, tmp_rd q, edges e, edges f WHERE (e.start = p.id_x and e.end = q.id_x and f.start = p.id_y and f.end = q.id_y) or (e.start = p.id_x and e.end = q.id_x and p.id_y = q.id_y) or (e.start = p.id_y and e.end = q.id_y and p.id_x = q.id_x)')
-
                 n = n + 1
 
-    for j in range(len(result_dataframes)):
-        print(result_dataframes[j])
+        for k in range(n):
+            if k == 0:
+                result_nodes = result_dataframes[k]
+            else:
+                result_nodes = np.concatenate((result_nodes, result_dataframes[k]))
+        print(result_nodes)
 
-    print(edges)
+        done = False
+        for e in range(edges.shape[0]):
+            for f in range(edges.shape[0]):
+                if e != f:
+                    for p in range(result_nodes.shape[0]):
+                        for q in range(result_nodes.shape[0]):
+                            if (edges[e, 0] == result_nodes[p, 0] and edges[e, 1] == result_nodes[q, 0] and edges[
+                                f, 0] == result_nodes[p, 3] and edges[f, 1] == result_nodes[q, 3]) \
+                                    or (edges[e, 0] == result_nodes[p, 0] and edges[e, 1] == result_nodes[q, 0] and
+                                        result_nodes[p, 3] == result_nodes[q, 3]) \
+                                    or (edges[e, 0] == result_nodes[p, 3] and edges[e, 1] == result_nodes[q, 3] and
+                                        result_nodes[p, 0] == result_nodes[q, 0]):
+                                if not done:
+                                    result_edges = [result_nodes[p, 6], result_nodes[q, 6]]
+                                    done = True
+                                else:
+                                    result_edges = np.concatenate(
+                                        (result_edges, [result_nodes[p, 6], result_nodes[q, 6]]), axis=0)
+
+        for j in range(len(result_dataframes)):
+            print(result_dataframes[j])
+        result_edges = np.reshape(result_edges, (int(result_edges.shape[0] / 2), 2))
+        unique_result_edges = list(Counter(str(e) for e in result_edges).keys())
+        final_edges = []
+        for k in range(len(unique_result_edges)):
+            for j in range(result_edges.shape[0]):
+                if str(result_edges[j]) == unique_result_edges[k]:
+                    if k == 0:
+                        final_edges = result_edges[j]
+                        break
+                    else:
+                        final_edges = np.concatenate((final_edges, result_edges[j]))
+                        break
+        final_edges = np.reshape(final_edges, (int(final_edges.shape[0] / 2), 2))
+        print(final_edges)
+        done = False
+        edge_to_remove = []
+        for j in range(final_edges.shape[0]):
+            for k in range(j+1, final_edges.shape[0]):
+                if final_edges[j, 1] == final_edges[k, 0]:
+                    if not done:
+                        edge_to_remove = [final_edges[j, 0], final_edges[k, 1]]
+                        done = True
+                    else:
+                        edge_to_remove = np.concatenate((edge_to_remove, [final_edges[j, 0], final_edges[k, 1]]))
+        edge_to_remove = np.reshape(edge_to_remove, (int(edge_to_remove.shape[0] / 2), 2))
+        print(edge_to_remove)
+
     return nodes, edges
 
 
