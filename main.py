@@ -375,46 +375,56 @@ def table_split(nodes_table: np.ndarray):
                 if k % 2 != 0:
                     attr = np.append(attr, nodes_table[j, k])
 
-        if current_attr != attr:
-            idx_to_split = np.append(idx_to_split, j)
-            current_attr = attr
+        if nodes_table.shape[1] > 3:
+            if not current_attr.equal(attr):
+                idx_to_split = np.append(idx_to_split, j)
+                current_attr = attr
+        else:
+            if current_attr != attr:
+                idx_to_split = np.append(idx_to_split, j)
+                current_attr = attr
 
     idx_to_split = np.delete(idx_to_split, 0)
     idx_to_split = np.append(idx_to_split, nodes_table.shape[0])
 
     prev = 0
 
-    dataframe_collection_nodes = {}
+    collection_nodes = {}
 
     k = 0
     for j in idx_to_split:
-        print(pd.DataFrame(nodes_table[prev:j, :], columns=['id', 'dim', 'index']))
-        dataframe_collection_nodes[k] = pd.DataFrame(nodes_table[prev:j, :], columns=['id', 'dim', 'index'])
+        print(nodes_table[prev:j, :])
+        collection_nodes[k] = nodes_table[prev:j, :]
         prev = j
         k = k + 1
-    return dataframe_collection_nodes
+    return collection_nodes
 
 
 def graph_generation(nodes: dict, edges: np.ndarray):
     result_nodes = []
     result_edges = []
-    dataframes = [nodes[n] for n in nodes]
     result_dataframes = {}
-    last_index = dataframes[len(dataframes) - 1]['id'].iloc[-1]
-    n = 0
-    if dataframes[0].shape[1] == 3:
-        for j in range(len(dataframes)):
-            for k in range(j + 1, len(dataframes)):
-                dataframes[j]['key'] = 1
-                dataframes[k]['key'] = 1
-                result_dataframes[n] = pd.merge(dataframes[j], dataframes[k], on='key').drop("key", 1)
-                result_dataframes[n]['Sum'] = result_dataframes[n].iloc[:, [2, 5]].sum(axis=1)
-                result_dataframes[n] = result_dataframes[n].sort_values('Sum')
-                result_dataframes[n] = result_dataframes[n].iloc[:, :-1]
-                result_dataframes[n]['NewID'] = range(last_index + 1, len(result_dataframes[n]) + last_index + 1)
-                last_index = len(result_dataframes[n]) + last_index
-                n = n + 1
 
+    last_index = nodes[len(nodes)-1][-1][0]
+    done = False
+    print(nodes)
+    for p in range(len(nodes)):
+        for q in range(len(nodes)):
+            for j in range(nodes[p].shape[0]):
+                for k in range(nodes[q].shape[0]):
+                    if list(nodes[p][j][1:-2]) == (list(nodes[q][k][1:-2])) and nodes[p][j][nodes[p].shape[1]-2] < nodes[q][k][nodes[q].shape[1]-2]:
+                        tmp_node = np.append(nodes[p][j][1:], np.append(nodes[q][k][nodes[q].shape[1]-2], np.append(nodes[q][k][nodes[p].shape[1]-1], np.append(nodes[p][j][0], nodes[q][k][0]))))
+                        if not done:
+                            result_nodes = [tmp_node]
+                            done = True
+                        else:
+                            result_nodes = np.concatenate((result_nodes, [tmp_node]))
+
+    result_nodes = result_nodes[np.argsort(result_nodes[:, [e for e in range(1, result_nodes.shape[1]-2) if e % 2 != 0]].sum(axis=1), kind='merge'), :]
+
+    result_nodes = np.c_[range(last_index + 1, last_index + 1 + result_nodes.shape[0]), result_nodes]
+    print(result_nodes)
+    '''
         for k in range(n):
             if k == 0:
                 result_nodes = result_dataframes[k]
@@ -469,7 +479,7 @@ def graph_generation(nodes: dict, edges: np.ndarray):
                         edge_to_remove = np.concatenate((edge_to_remove, [final_edges[j, 0], final_edges[k, 1]]))
         edge_to_remove = np.reshape(edge_to_remove, (int(edge_to_remove.shape[0] / 2), 2))
         print(edge_to_remove)
-
+        '''
     return nodes, edges
 
 
@@ -517,7 +527,7 @@ if __name__ == '__main__':
                 S = np.delete(S, np.where(S[:, 0] == node[0]), 0)
                 E = np.delete(E, np.where(E[:, 0] == node[0]), 0)
                 E = np.delete(E, np.where(E[:, 1] == node[0]), 0)
-    print(S)
-    print(E)
+    # print(S)
+    # print(E)
     S = table_split(S)
     C, E = graph_generation(S, E)
