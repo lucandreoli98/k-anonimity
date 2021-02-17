@@ -360,7 +360,7 @@ def insert_direct_generalizations_of_node_into_queue(id_node: int, q: np.ndarray
     return q
 
 
-def table_split(nodes_table: np.ndarray, edges_table: np.ndarray):
+def table_split(nodes_table: np.ndarray):
     idx_to_split = [0]
     current_attr = nodes_table[0, 1]
     if nodes_table.shape[1] > 3:
@@ -382,18 +382,33 @@ def table_split(nodes_table: np.ndarray, edges_table: np.ndarray):
     idx_to_split = np.delete(idx_to_split, 0)
     idx_to_split = np.append(idx_to_split, nodes_table.shape[0])
 
-    splitted_tables = []
     prev = 0
+
+    dataframe_collection_nodes = {}
+
+    k = 0
     for j in idx_to_split:
-        if j == idx_to_split[0]:
-            print(pd.DataFrame(nodes_table[0:j, :], columns=['id', 'dim', 'index']))
-            # splitted_tables = pd.DataFrame(nodes_table[0:j, :], columns=['id', 'dim', 'index'])
-            prev = j
-        else:
-            print(pd.DataFrame(nodes_table[prev:j, :], columns=['id', 'dim', 'index']))
-            # splitted_tables = np.concatenate((splitted_tables, pd.DataFrame(nodes_table[prev:j, :], columns=['id', 'dim', 'index'])), axis=1)
-            prev = j
-    return splitted_tables
+        print(pd.DataFrame(nodes_table[prev:j, :], columns=['id', 'dim', 'index']))
+        dataframe_collection_nodes[k] = pd.DataFrame(nodes_table[prev:j, :], columns=['id', 'dim', 'index'])
+        prev = j
+        k = k + 1
+    return dataframe_collection_nodes
+
+
+def graph_generation(nodes: dict, edges: np.ndarray):
+    dataframes = [nodes[n] for n in nodes]
+    result_dataframes = {}
+    n = 0
+    if dataframes[0].shape[1] == 3:
+        for j in range(len(dataframes)):
+            for k in range(j+1, len(dataframes)):
+                dataframes[j]['key'] = 1
+                dataframes[k]['key'] = 1
+                result_dataframes[n] = pd.merge(dataframes[j], dataframes[k], on='key').drop("key", 1)
+                n = n + 1
+    for j in range(len(result_dataframes)):
+        print(result_dataframes[j])
+    return nodes, edges
 
 
 if __name__ == '__main__':
@@ -441,5 +456,6 @@ if __name__ == '__main__':
                 E = np.delete(E, np.where(E[:, 0] == node[0]), 0)
                 E = np.delete(E, np.where(E[:, 1] == node[0]), 0)
     print(S)
-    print(table_split(S, E))
-    # C, E = graph_generation(S, E)
+    print(E)
+    S = table_split(S)
+    C, E = graph_generation(S, E)
