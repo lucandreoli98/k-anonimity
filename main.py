@@ -227,6 +227,15 @@ def generalize_string(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
 
 
 def check_strings_occ(data: np.ndarray, idx: int, threshold: int):
+    """
+    Prints QIs of tuples' that occurs under a certain treshold,
+    the number of those tuples,
+    the list of QI and the tuples that are over this treshold
+    and the list of QI and the tuples that are under this treshold
+    :param data: Entire Dataset
+    :param idx: The QI passed by the user
+    :param threshold: the number of tuples will be highlighted
+    """
     [arr, count] = np.unique(data[:, idx], return_counts=True)
     print(list(arr[np.where(count < threshold)]))
     print((arr[np.where(count < threshold)].shape[0]))
@@ -294,6 +303,14 @@ def check_k_anonymity(data: np.ndarray, k: int, qi_indices=None):
 
 
 def delete_outliers_of_data_before(data: np.ndarray, qi_inspect: int, threshold: int):
+    """
+    Delete tuples more distant from the average behavior of the Dataset by data
+    before applying the generalization
+    :param data: Entire Dataset
+    :param qi_inspect: The index of the QI
+    :param threshold: the number of tuples chosen as bind
+    :return: the list of the tuples to be deleted
+    """
     idx_to_del = []
     done = False
     for j in range(data.shape[0]):
@@ -307,6 +324,13 @@ def delete_outliers_of_data_before(data: np.ndarray, qi_inspect: int, threshold:
 
 
 def delete_outliers_of_string_before(data: np.ndarray, qi_inspect: int):
+    """
+    Delete tuples more distant from the average behavior of the Dataset by Job
+    before applying the generalization
+    :param data: Entire Dataset
+    :param qi_inspect: The index of the QI
+    :return: the list of the tuples to be deleted
+    """
     idx_to_del = []
     done = False
     for j in range(data.shape[0]):
@@ -320,6 +344,15 @@ def delete_outliers_of_string_before(data: np.ndarray, qi_inspect: int):
 
 
 def start_tables_generation(qi_indices=None):
+    """
+    First step of incognito: creates generalized table for QIs.
+    Those are the matrix representation of the nodes composed
+    by the generalization levels of the subset of attributes
+    and the relative edges that define direct generalization
+    hierarchy from less gen. node to the most gen.
+    :param qi_indices:
+    :return: nodes and edges of the tree in matrix and vector form
+    """
     max_level = 0
     bias = [0, 3, 6, 11, 16]
     nodes_table = []
@@ -351,6 +384,12 @@ def start_tables_generation(qi_indices=None):
 
 
 def find_roots(table_of_nodes: np.ndarray, table_of_edges: np.ndarray):
+    """
+    Finds all the nodes without incoming edges
+    :param table_of_nodes: Matrix of generalized nodes
+    :param table_of_edges: Matrix of edges related to generalized nodes
+    :return: matrix of root nodes
+    """
     rts = []
     for j in range(table_of_nodes.shape[0]):
         flag = True
@@ -367,6 +406,12 @@ def find_roots(table_of_nodes: np.ndarray, table_of_edges: np.ndarray):
 
 
 def insert_roots_into_queue(rt: np.ndarray):
+    """
+    Insert all the nodes that has no direct incoming edges
+    into queue
+    :param rt: vector of root nodes
+    :return: vector queue
+    """
     q = []
     for j in range(rt.shape[0]):
         if j == 0:
@@ -378,6 +423,13 @@ def insert_roots_into_queue(rt: np.ndarray):
 
 
 def generalize_values(data: np.ndarray, qi_indices: np.ndarray, levels: np.ndarray):
+    """
+    Generalize all values identified by certain specific QIs
+    :param data: Entire Dataset
+    :param qi_indices: One or a list of QI for generalization operation
+    :param levels: Desired level of generalization
+    :return: The generalized Dataset
+    """
     if np.isscalar(qi_indices):
         if qi_indices in range(0, 2):
             data = generalize_string(data, int(qi_indices), int(levels))
@@ -394,6 +446,11 @@ def generalize_values(data: np.ndarray, qi_indices: np.ndarray, levels: np.ndarr
 
 
 def get_node_indices_and_levels(nd: np.ndarray):
+    """
+    Retrieve QIs and their generalization level
+    :param nd: Matrix of generalized nodes
+    :return: vector of QIs and their levels
+    """
     indices = []
     lvs = []
     for j in range(1, nd.shape[0]):
@@ -408,6 +465,13 @@ def get_node_indices_and_levels(nd: np.ndarray):
 
 
 def mark_all_direct_generalizations(id_node: int, marks: np.ndarray, edges: np.ndarray):
+    """
+    Finds all connected nodes (direct generalizations) by looking at edges matrix
+    :param id_node: Identifier of node from wich we have to find direct connected nodes
+    :param marks: Vector representing directed generalization nodes
+    :param edges: 2D list of connection between nodes
+    :return: vector of marked nodes
+    """
     for j in range(edges.shape[0]):
         if edges[j, 0] == id_node:
             marks = np.append(marks, edges[j, 1])
@@ -415,6 +479,14 @@ def mark_all_direct_generalizations(id_node: int, marks: np.ndarray, edges: np.n
 
 
 def insert_direct_generalizations_of_node_into_queue(id_node: int, q: np.ndarray, edges: np.ndarray, nodes: np.ndarray):
+    """
+    Once found direct generalizations (nodes) of the node given as parameter (ID), then put them in the queue
+    :param id_node: Node identifier to start search
+    :param q: List of nodes
+    :param edges: Connection between nodes
+    :param nodes: Matrix of generalized Nodes
+    :return:
+    """
     for j in range(edges.shape[0]):
         if edges[j, 0] == id_node:
             q = np.concatenate((q, nodes[np.where(edges[j, 1] == nodes[:, 0]), :][0]))
@@ -422,6 +494,26 @@ def insert_direct_generalizations_of_node_into_queue(id_node: int, q: np.ndarray
 
 
 def graph_generation(nodes: np.ndarray, edges: np.ndarray):
+    """
+    Refering to Incognito, it is the generation of Candidate Set of Nodes
+    where the subset of QI grows till generate Ci with composed of all
+    QI chosen for anonimization:
+    ex. number of Qi = n
+        1st iteration generates generalized nodes composed of 2 QI
+        2nd iteration generates generalized nodes composed of 3 QI
+        ...
+        ith iteration generates generalized nodes composed of n QI
+
+    At each iteration will be generated a set of direct edges
+    connecting the new nodes' set
+
+    In the end only nodes satisfing K-anonimity wil be taken and
+    as consequence on the edges
+
+    :param nodes: Matrix of generalized nodes
+    :param edges: onnection between nodes
+    :return: Matrix of nodes satisfing k-an and relative edges
+    """
     result_nodes = []
     result_edges = []
 
@@ -525,7 +617,9 @@ if __name__ == '__main__':
     values = data2int(values, qi_idx[2:5])
 
     # Check
-    print(fields)
+    #print(fields)
+    check_strings_occ(values, 0, 100)
+
     plot_graphs(generalize_string(values, 0, 1), fields, 0)
     plot_graphs(generalize_string(values, 1, 1), fields, 1)
 
