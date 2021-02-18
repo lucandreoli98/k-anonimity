@@ -247,7 +247,7 @@ def check_k_anonymity(data: np.ndarray, k: int, qi_indices=None):
     :param qi_indices: Indices of Quasi-Identifier
     :return: True if dataset respect the k-anonymity, or False
     """
-    print(Counter(str(e) for e in data[:, qi_indices]))
+    # print(Counter(str(e) for e in data[:, qi_indices]))
 
     occurrences = list(Counter(str(e) for e in data[:, qi_indices]).values())
     for j in range(len(occurrences)):
@@ -341,8 +341,6 @@ def get_node_indices_and_levels(nd: np.ndarray):
             indices = np.append(indices, nd[j])
         elif j % 2 == 0 and j > 2:
             lvs = np.append(lvs, nd[j + 1])
-        print("Index Level")
-        print(indices, lvs)
     return indices, lvs
 
 
@@ -360,126 +358,79 @@ def insert_direct_generalizations_of_node_into_queue(id_node: int, q: np.ndarray
     return q
 
 
-def table_split(nodes_table: np.ndarray):
-    idx_to_split = [0]
-    current_attr = nodes_table[0, 1]
-    if nodes_table.shape[1] > 3:
-        for k in range(3, nodes_table.shape[1]):
-            if k % 2 != 0:
-                current_attr = np.append(current_attr, nodes_table[0, k])
-
-    for j in range(1, nodes_table.shape[0]):
-        attr = nodes_table[j, 1]
-        if nodes_table.shape[1] > 3:
-            for k in range(3, nodes_table.shape[1]):
-                if k % 2 != 0:
-                    attr = np.append(attr, nodes_table[j, k])
-
-        if nodes_table.shape[1] > 3:
-            if not current_attr.equal(attr):
-                idx_to_split = np.append(idx_to_split, j)
-                current_attr = attr
-        else:
-            if current_attr != attr:
-                idx_to_split = np.append(idx_to_split, j)
-                current_attr = attr
-
-    idx_to_split = np.delete(idx_to_split, 0)
-    idx_to_split = np.append(idx_to_split, nodes_table.shape[0])
-
-    prev = 0
-
-    collection_nodes = {}
-
-    k = 0
-    for j in idx_to_split:
-        print(nodes_table[prev:j, :])
-        collection_nodes[k] = nodes_table[prev:j, :]
-        prev = j
-        k = k + 1
-    return collection_nodes
-
-
-def graph_generation(nodes: dict, edges: np.ndarray):
+def graph_generation(nodes: np.ndarray, edges: np.ndarray):
     result_nodes = []
     result_edges = []
-    result_dataframes = {}
 
-    last_index = nodes[len(nodes)-1][-1][0]
+    last_index = nodes[-1, 0]
+
     done = False
     print(nodes)
-    for p in range(len(nodes)):
-        for q in range(len(nodes)):
-            for j in range(nodes[p].shape[0]):
-                for k in range(nodes[q].shape[0]):
-                    if list(nodes[p][j][1:-2]) == (list(nodes[q][k][1:-2])) and nodes[p][j][nodes[p].shape[1]-2] < nodes[q][k][nodes[q].shape[1]-2]:
-                        tmp_node = np.append(nodes[p][j][1:], np.append(nodes[q][k][nodes[q].shape[1]-2], np.append(nodes[q][k][nodes[p].shape[1]-1], np.append(nodes[p][j][0], nodes[q][k][0]))))
-                        if not done:
-                            result_nodes = [tmp_node]
-                            done = True
-                        else:
-                            result_nodes = np.concatenate((result_nodes, [tmp_node]))
+    for p in range(nodes.shape[0]):
+        for q in range(nodes.shape[0]):
+            if list(nodes[p, 1:-2]) == (list(nodes[q, 1:-2])) and nodes[p, nodes.shape[1] - 2] < \
+                    nodes[q, nodes.shape[1] - 2]:
+                tmp_node = np.append(nodes[p, 1:], np.append(nodes[q, nodes.shape[1] - 2],
+                                                             np.append(nodes[q, nodes.shape[1] - 1],
+                                                                       np.append(nodes[p, 0],
+                                                                                 nodes[q, 0]))))
+                if not done:
+                    result_nodes = [tmp_node]
+                    done = True
+                else:
+                    result_nodes = np.concatenate((result_nodes, [tmp_node]))
 
-    result_nodes = result_nodes[np.argsort(result_nodes[:, [e for e in range(1, result_nodes.shape[1]-2) if e % 2 != 0]].sum(axis=1), kind='merge'), :]
+    result_nodes = result_nodes[np.argsort(
+        result_nodes[:, [e for e in range(1, result_nodes.shape[1] - 2) if e % 2 != 0]].sum(axis=1)), :]
 
     result_nodes = np.c_[range(last_index + 1, last_index + 1 + result_nodes.shape[0]), result_nodes]
     print(result_nodes)
-    '''
-        for k in range(n):
-            if k == 0:
-                result_nodes = result_dataframes[k]
-            else:
-                result_nodes = np.concatenate((result_nodes, result_dataframes[k]))
-        print(result_nodes)
 
-        done = False
-        for e in range(edges.shape[0]):
-            for f in range(edges.shape[0]):
-                if e != f:
-                    for p in range(result_nodes.shape[0]):
-                        for q in range(result_nodes.shape[0]):
-                            if (edges[e, 0] == result_nodes[p, 0] and edges[e, 1] == result_nodes[q, 0] and edges[
-                                f, 0] == result_nodes[p, 3] and edges[f, 1] == result_nodes[q, 3]) \
-                                    or (edges[e, 0] == result_nodes[p, 0] and edges[e, 1] == result_nodes[q, 0] and
-                                        result_nodes[p, 3] == result_nodes[q, 3]) \
-                                    or (edges[e, 0] == result_nodes[p, 3] and edges[e, 1] == result_nodes[q, 3] and
-                                        result_nodes[p, 0] == result_nodes[q, 0]):
-                                if not done:
-                                    result_edges = [result_nodes[p, 6], result_nodes[q, 6]]
-                                    done = True
-                                else:
-                                    result_edges = np.concatenate(
-                                        (result_edges, [result_nodes[p, 6], result_nodes[q, 6]]), axis=0)
+    done = False
+    for e in range(edges.shape[0]):
+        for f in range(edges.shape[0]):
+            for p in range(result_nodes.shape[0]):
+                for q in range(result_nodes.shape[0]):
+                    if (edges[e, 0] == result_nodes[p, -2] and edges[e, 1] == result_nodes[q, -2] and edges[
+                        f, 0] == result_nodes[p, -1] and edges[f, 1] == result_nodes[q, -1]) \
+                            or (edges[e, 0] == result_nodes[p, -2] and edges[e, 1] == result_nodes[q, -2] and
+                                result_nodes[p, -1] == result_nodes[q, -1]) \
+                            or (edges[e, 0] == result_nodes[p, -1] and edges[e, 1] == result_nodes[q, -1] and
+                                result_nodes[p, -2] == result_nodes[q, -2]):
+                        if not done:
+                            result_edges = [[result_nodes[p, 0], result_nodes[q, 0]]]
+                            done = True
+                        else:
+                            result_edges = np.concatenate(
+                                (result_edges, [[result_nodes[p, 0], result_nodes[q, 0]]]), axis=0)
+    # print(result_edges)
 
-        for j in range(len(result_dataframes)):
-            print(result_dataframes[j])
-        result_edges = np.reshape(result_edges, (int(result_edges.shape[0] / 2), 2))
-        unique_result_edges = list(Counter(str(e) for e in result_edges).keys())
-        final_edges = []
-        for k in range(len(unique_result_edges)):
-            for j in range(result_edges.shape[0]):
-                if str(result_edges[j]) == unique_result_edges[k]:
-                    if k == 0:
-                        final_edges = result_edges[j]
-                        break
-                    else:
-                        final_edges = np.concatenate((final_edges, result_edges[j]))
-                        break
-        final_edges = np.reshape(final_edges, (int(final_edges.shape[0] / 2), 2))
-        print(final_edges)
-        done = False
-        edge_to_remove = []
-        for j in range(final_edges.shape[0]):
-            for k in range(j+1, final_edges.shape[0]):
-                if final_edges[j, 1] == final_edges[k, 0]:
-                    if not done:
-                        edge_to_remove = [final_edges[j, 0], final_edges[k, 1]]
-                        done = True
-                    else:
-                        edge_to_remove = np.concatenate((edge_to_remove, [final_edges[j, 0], final_edges[k, 1]]))
-        edge_to_remove = np.reshape(edge_to_remove, (int(edge_to_remove.shape[0] / 2), 2))
-        print(edge_to_remove)
-        '''
+    unique_result_edges = list(Counter(str(e) for e in result_edges).keys())
+    # print(unique_result_edges)
+    final_edges = []
+    for k in range(len(unique_result_edges)):
+        for j in range(result_edges.shape[0]):
+            if str(result_edges[j]) == unique_result_edges[k]:
+                if k == 0:
+                    final_edges = result_edges[j]
+                    break
+                else:
+                    final_edges = np.concatenate((final_edges, result_edges[j]))
+                    break
+    final_edges = np.reshape(final_edges, (int(final_edges.shape[0] / 2), 2))
+    # print(final_edges.shape[0])
+    done = False
+    edge_to_remove = []
+    for j in range(final_edges.shape[0]):
+        for k in range(j + 1, final_edges.shape[0]):
+            if final_edges[j, 1] == final_edges[k, 0]:
+                if not done:
+                    edge_to_remove = [[final_edges[j, 0], final_edges[k, 1]]]
+                    done = True
+                else:
+                    edge_to_remove = np.concatenate((edge_to_remove, [[final_edges[j, 0], final_edges[k, 1]]]))
+    # print(edge_to_remove.shape[0])
+
     return nodes, edges
 
 
@@ -500,7 +451,7 @@ if __name__ == '__main__':
 
     # Algorithm
     [C, E] = start_tables_generation(qi_idx)
-    print(C)
+    # print(C)
     # for i in range(fields.shape[0]):
     S = C
     roots = find_roots(C, E)
@@ -510,10 +461,12 @@ if __name__ == '__main__':
 
     while queue.shape[0] > 0:
         node = queue[0, :]
+        '''
         print("-------------------------------------------------------------")
         print("Queue:")
         print(queue)
         print("Extracted node: ", node)
+        '''
         queue = np.delete(queue, 0, 0)
 
         if not node[0] in marked:
@@ -529,5 +482,4 @@ if __name__ == '__main__':
                 E = np.delete(E, np.where(E[:, 1] == node[0]), 0)
     # print(S)
     # print(E)
-    S = table_split(S)
     C, E = graph_generation(S, E)
