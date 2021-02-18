@@ -129,38 +129,62 @@ def generalize_data(values_to_gen: np.ndarray, qi_data_idx_to_gen: int, lv: int)
     :param lv: Level to generalize data
     :return: Entire dataset with data values generalized
     """
+    tmp = []
     if qi_data_idx_to_gen in range(2, 5):
-        if lv in range(0, 5):
+        if lv in range(1, 5):
             for j in range(values_to_gen.shape[0]):
                 if type(values_to_gen[j, qi_data_idx_to_gen]) is not float:
                     if lv == 1:
                         if values_to_gen[j, qi_data_idx_to_gen] in range(1000000, 100000000):
-                            values_to_gen[j, qi_data_idx_to_gen] = int(
-                                np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
+                            if j == 0:
+                                tmp = int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
+                            else:
+                                tmp = np.append(tmp, int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100)))
                     if lv == 2:
                         if values_to_gen[j, qi_data_idx_to_gen] in range(1000000, 100000000):
-                            values_to_gen[j, qi_data_idx_to_gen] = int(
-                                np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 10000))
+                            if j == 0:
+                                tmp = int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 10000))
+                            else:
+                                tmp = np.append(tmp, int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 10000)))
                         elif values_to_gen[j, qi_data_idx_to_gen] in range(10000, 1000000):
-                            values_to_gen[j, qi_data_idx_to_gen] = int(
-                                np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
+                            if j == 0:
+                                tmp = int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
+                            else:
+                                tmp = np.append(tmp, int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100)))
                     if lv == 3:
                         if values_to_gen[j, qi_data_idx_to_gen] in range(1000000, 100000000):
-                            values_to_gen[j, qi_data_idx_to_gen] = int(
-                                np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 10000))
-                            values_to_gen[j, qi_data_idx_to_gen] = int(
-                                np.trunc((values_to_gen[j, qi_data_idx_to_gen] % 100) / 10) * 10)
+                            if j == 0:
+                                tmp = int(np.trunc(
+                                    (int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 10000)) % 100) / 10) * 10)
+                            else:
+                                tmp = np.append(tmp, int(np.trunc(
+                                    (int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 10000)) % 100) / 10) * 10))
                         elif values_to_gen[j, qi_data_idx_to_gen] in range(10000, 1000000):
-                            values_to_gen[j, qi_data_idx_to_gen] = int(
-                                np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100))
-                            values_to_gen[j, qi_data_idx_to_gen] = int(
-                                np.trunc((values_to_gen[j, qi_data_idx_to_gen] % 100) / 10) * 10)
+                            if j == 0:
+                                tmp = int(np.trunc(
+                                    (int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100)) % 100) / 10) * 10)
+                            else:
+                                tmp = np.append(tmp, int(np.trunc(
+                                    (int(np.trunc(values_to_gen[j, qi_data_idx_to_gen] / 100)) % 100) / 10) * 10))
                         elif values_to_gen[j, qi_data_idx_to_gen] in range(100, 10000):
-                            values_to_gen[j, qi_data_idx_to_gen] = int(
-                                np.trunc((values_to_gen[j, qi_data_idx_to_gen] % 100) / 10) * 10)
+                            if j == 0:
+                                tmp = int(np.trunc((values_to_gen[j, qi_data_idx_to_gen] % 100) / 10) * 10)
+                            else:
+                                tmp = np.append(tmp,
+                                                int(np.trunc((values_to_gen[j, qi_data_idx_to_gen] % 100) / 10) * 10))
                     if lv == 4:
-                        values_to_gen[j, qi_data_idx_to_gen] = np.nan
+                        if j == 0:
+                            tmp = np.nan
+                        else:
+                            tmp = np.append(tmp, np.nan)
 
+                else:
+                    if j == 0:
+                        tmp = np.nan
+                    else:
+                        tmp = np.append(tmp, np.nan)
+
+            return np.c_[values_to_gen[:, 0:qi_data_idx_to_gen], tmp, values_to_gen[:, qi_data_idx_to_gen + 1:]]
     return values_to_gen
 
 
@@ -174,6 +198,7 @@ def generalize_string(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
     :param level_of_generalization: Specify level of generalization (1 or 2)
     :return: Entire dataset with generalized values
     """
+    tmp = []
     if qi_string_idx_to_gen in range(0, 2):
         if level_of_generalization == 1:
             hierarchy = []
@@ -181,21 +206,32 @@ def generalize_string(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
                 hierarchy = create_string_generalize_hierarchy(values_to_gen, qi_string_idx_to_gen)
             elif qi_string_idx_to_gen == 1:
                 hierarchy = create_string_generalize_hierarchy(values_to_gen, qi_string_idx_to_gen)
-
-            for j in range(hierarchy.shape[0]):
-                indices = np.where(values_to_gen[:, qi_string_idx_to_gen] == hierarchy[j, level_of_generalization - 1])
-                values_to_gen[indices, qi_string_idx_to_gen] = hierarchy[j, level_of_generalization].strip()
+                print(values_to_gen[0:10, 1])
+            for j in range(values_to_gen.shape[0]):
+                for k in range(hierarchy.shape[0]):
+                    if values_to_gen[j, qi_string_idx_to_gen] == hierarchy[k, 0]:
+                        if j == 0:
+                            tmp = hierarchy[k, 1].strip()
+                        else:
+                            tmp = np.append(tmp, hierarchy[k, 1].strip())
+            return np.c_[values_to_gen[:, 0:qi_string_idx_to_gen], tmp, values_to_gen[:, qi_string_idx_to_gen + 1:]]
         elif level_of_generalization == 2:
-            values_to_gen[:, qi_string_idx_to_gen] = '*'
+            for j in range(values_to_gen.shape[0]):
+                if j == 0:
+                    tmp = '*'
+                else:
+                    tmp = np.append(tmp, '*')
+            return np.c_[values_to_gen[:, 0:qi_string_idx_to_gen], tmp, values_to_gen[:, qi_string_idx_to_gen + 1:]]
+
     return values_to_gen
 
 
-def check_strings_occ(data: np.ndarray, idx: int):
+def check_strings_occ(data: np.ndarray, idx: int, threshold: int):
     [arr, count] = np.unique(data[:, idx], return_counts=True)
-    print(list(arr[np.where(count < 100)]))
-    print((arr[np.where(count < 100)].shape[0]))
-    print(list(zip(list(arr[np.where(count > 100)]), list(count[np.where(count > 100)]))))
-    print(list(arr[np.where(count > 100)]))
+    print(list(arr[np.where(count < threshold)]))
+    print((arr[np.where(count < threshold)].shape[0]))
+    print(list(zip(list(arr[np.where(count > threshold)]), list(count[np.where(count > threshold)]))))
+    print(list(zip(list(arr[np.where(count < threshold)]), list(count[np.where(count < threshold)]))))
 
 
 def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
@@ -247,13 +283,40 @@ def check_k_anonymity(data: np.ndarray, k: int, qi_indices=None):
     :param qi_indices: Indices of Quasi-Identifier
     :return: True if dataset respect the k-anonymity, or False
     """
-    # print(Counter(str(e) for e in data[:, qi_indices]))
+    print(Counter(str(e) for e in data[:, qi_indices]))
 
     occurrences = list(Counter(str(e) for e in data[:, qi_indices]).values())
+    print(occurrences)
     for j in range(len(occurrences)):
         if occurrences[j] < k:
             return False
     return True
+
+
+def delete_outliers_of_data_before(data: np.ndarray, qi_inspect: int, threshold: int):
+    idx_to_del = []
+    done = False
+    for j in range(data.shape[0]):
+        if data[j, qi_inspect] < threshold:
+            if not done:
+                idx_to_del = j
+                done = True
+            else:
+                idx_to_del = np.append(idx_to_del, j)
+    return np.delete(data, idx_to_del, axis=0)
+
+
+def delete_outliers_of_string_before(data: np.ndarray, qi_inspect: int):
+    idx_to_del = []
+    done = False
+    for j in range(data.shape[0]):
+        if data[j, qi_inspect] == 'REAL' or data[j, qi_inspect] == 'STUDENT':
+            if not done:
+                idx_to_del = j
+                done = True
+            else:
+                idx_to_del = np.append(idx_to_del, j)
+    return np.delete(data, idx_to_del, axis=0)
 
 
 def start_tables_generation(qi_indices=None):
@@ -321,11 +384,11 @@ def generalize_values(data: np.ndarray, qi_indices: np.ndarray, levels: np.ndarr
         if qi_indices in range(2, 5):
             data = generalize_data(data, int(qi_indices), int(levels))
     elif qi_indices.shape[0] > 1:
-        for j in qi_indices:
-            if j in range(0, 2):
-                data = generalize_string(data, j, levels[j])
-            if j in range(2, 5):
-                data = generalize_data(data, j, int(levels[j]))
+        for j in range(qi_indices.shape[0]):
+            if qi_indices[j] in range(0, 2):
+                data = generalize_string(data, qi_indices[j], levels[j])
+            if qi_indices[j] in range(2, 5):
+                data = generalize_data(data, qi_indices[j], int(levels[j]))
 
     return data
 
@@ -333,14 +396,14 @@ def generalize_values(data: np.ndarray, qi_indices: np.ndarray, levels: np.ndarr
 def get_node_indices_and_levels(nd: np.ndarray):
     indices = []
     lvs = []
-    for j in range(1, nd.shape[0] - 1):
+    for j in range(1, nd.shape[0]):
         if j == 1:
             indices = nd[j]
             lvs = nd[j + 1]
         elif j % 2 != 0 and j > 1:
             indices = np.append(indices, nd[j])
         elif j % 2 == 0 and j > 2:
-            lvs = np.append(lvs, nd[j + 1])
+            lvs = np.append(lvs, nd[j])
     return indices, lvs
 
 
@@ -365,7 +428,7 @@ def graph_generation(nodes: np.ndarray, edges: np.ndarray):
     last_index = nodes[-1, 0]
 
     done = False
-    print(nodes)
+    # print(nodes)
     for p in range(nodes.shape[0]):
         for q in range(nodes.shape[0]):
             if list(nodes[p, 1:-2]) == (list(nodes[q, 1:-2])) and nodes[p, nodes.shape[1] - 2] < \
@@ -384,7 +447,7 @@ def graph_generation(nodes: np.ndarray, edges: np.ndarray):
         result_nodes[:, [e for e in range(1, result_nodes.shape[1] - 2) if e % 2 != 0]].sum(axis=1)), :]
 
     result_nodes = np.c_[range(last_index + 1, last_index + 1 + result_nodes.shape[0]), result_nodes]
-    print(result_nodes)
+    # print(result_nodes)
 
     done = False
     for e in range(edges.shape[0]):
@@ -403,8 +466,9 @@ def graph_generation(nodes: np.ndarray, edges: np.ndarray):
                         else:
                             result_edges = np.concatenate(
                                 (result_edges, [[result_nodes[p, 0], result_nodes[q, 0]]]), axis=0)
-    # print(result_edges)
+    # print(edges)
 
+    # print(result_edges)
     unique_result_edges = list(Counter(str(e) for e in result_edges).keys())
     # print(unique_result_edges)
     final_edges = []
@@ -429,9 +493,23 @@ def graph_generation(nodes: np.ndarray, edges: np.ndarray):
                     done = True
                 else:
                     edge_to_remove = np.concatenate((edge_to_remove, [[final_edges[j, 0], final_edges[k, 1]]]))
-    # print(edge_to_remove.shape[0])
+    # print(edge_to_remove)
 
-    return nodes, edges
+    idx_to_remove = []
+    done = False
+    for j in range(edge_to_remove.shape[0]):
+        for k in range(final_edges.shape[0]):
+            if list(edge_to_remove[j]) == list(final_edges[k]):
+                if not done:
+                    idx_to_remove = k
+                    done = True
+                else:
+                    idx_to_remove = np.append(idx_to_remove, k)
+    final_edges = np.delete(final_edges, idx_to_remove, axis=0)
+    # print(final_edges)
+    result_nodes = np.delete(result_nodes, [-1, -2], 1)
+    # print(result_nodes)
+    return result_nodes, final_edges
 
 
 if __name__ == '__main__':
@@ -448,38 +526,62 @@ if __name__ == '__main__':
 
     # Check
     print(fields)
+    plot_graphs(generalize_string(values, 0, 1), fields, 0)
+    plot_graphs(generalize_string(values, 1, 1), fields, 1)
+
+    plot_graphs(values, fields, 2)
+    plot_graphs(values, fields, 3)
+    plot_graphs(values, fields, 4)
+
+    values = delete_outliers_of_data_before(values, 2, 19890000)
+    values = delete_outliers_of_string_before(generalize_string(values, 0, 1), 0)
+    check_strings_occ(generalize_string(values, 0, 1), 0, 100)
+    plot_graphs(values, fields, 2)
+    plot_graphs(values, fields, 3)
 
     # Algorithm
     [C, E] = start_tables_generation(qi_idx)
-    # print(C)
-    # for i in range(fields.shape[0]):
     S = C
-    roots = find_roots(C, E)
-    queue = insert_roots_into_queue(roots)
+    # print(C)
 
-    marked = []
+    for i in range(fields.shape[0] - 1):
+        S = C
+        roots = find_roots(C, E)
 
-    while queue.shape[0] > 0:
-        node = queue[0, :]
-        '''
-        print("-------------------------------------------------------------")
-        print("Queue:")
-        print(queue)
-        print("Extracted node: ", node)
-        '''
-        queue = np.delete(queue, 0, 0)
+        queue = insert_roots_into_queue(roots)
+        marked = []
 
-        if not node[0] in marked:
-            idx_node, levels_node = get_node_indices_and_levels(node)
-            dataset = generalize_values(values, idx_node, levels_node)
+        while queue.shape[0] > 0:
+            node = queue[0, :]
 
-            if check_k_anonymity(dataset, 2, idx_node):
-                marked = mark_all_direct_generalizations(node[0], np.array(marked, dtype='int'), E)
-            else:
-                queue = insert_direct_generalizations_of_node_into_queue(node[0], queue, E, S)
-                S = np.delete(S, np.where(S[:, 0] == node[0]), 0)
-                E = np.delete(E, np.where(E[:, 0] == node[0]), 0)
-                E = np.delete(E, np.where(E[:, 1] == node[0]), 0)
-    # print(S)
-    # print(E)
-    C, E = graph_generation(S, E)
+            print("-------------------------------------------------------------")
+            print("Queue:")
+            print(queue)
+            print("Extracted node: ", node)
+
+            queue = np.delete(queue, 0, 0)
+
+            if not node[0] in marked:
+                idx_node, levels_node = get_node_indices_and_levels(node)
+                dataset = generalize_values(values, idx_node, levels_node)
+                if check_k_anonymity(dataset, 2, idx_node):
+                    print("Respect 2-anonymity")
+                    marked = mark_all_direct_generalizations(node[0], np.array(marked, dtype='int'), E)
+                else:
+                    print("NOT respect 2-anonymity")
+                    queue = insert_direct_generalizations_of_node_into_queue(node[0], queue, E, S)
+                    S = np.delete(S, np.where(S[:, 0] == node[0]), 0)
+                    E = np.delete(E, np.where(E[:, 0] == node[0]), 0)
+                    E = np.delete(E, np.where(E[:, 1] == node[0]), 0)
+        if i < 4:
+            C, E = graph_generation(S, E)
+        else:
+            print(S)
+
+    for x in range(S.shape[0]):
+        idx_node, levels_node = get_node_indices_and_levels(S[x])
+        dataset = generalize_values(values, idx_node, levels_node)
+        # if not check_k_anonymity(dataset, 4, idx_node):
+        #    delete_outliers_after_incognito(dataset, 4, idx_node)
+
+        print(check_k_anonymity(dataset, 2, idx_node))
