@@ -645,7 +645,7 @@ if __name__ == '__main__':
 
     # Check
     print(fields)
-    '''
+
     plot_graphs(values, fields, 0)
     plot_graphs(values, fields, 1)
 
@@ -655,16 +655,16 @@ if __name__ == '__main__':
 
     plot_graphs(generalize_string(values, 0, 1), fields, 0)
     plot_graphs(generalize_string(values, 1, 1), fields, 1)
-    '''
+
     values = delete_outliers_of_data_before(values, 2, 19890000)
     values = delete_outliers_of_string_before(values, 0)
-    '''
+
     plot_graphs(generalize_string(values, 0, 1), fields, 0)
     plot_graphs(generalize_string(values, 1, 1), fields, 1)
 
     plot_graphs(values, fields, 2)
     plot_graphs(values, fields, 3)
-    '''
+
     # Algorithm
     [C, E] = start_tables_generation(qi_idx)
     S = C
@@ -707,12 +707,14 @@ if __name__ == '__main__':
             print("\n----------------------RESULTS----------------------\n")
             print(S)
 
+    # Check k-anonymity of final nodes
     for x in range(S.shape[0]):
         idx_node, levels_node = get_node_indices_and_levels(S[x])
         dataset = generalize_values(values, idx_node, levels_node)
 
         print(check_k_anonymity(dataset, 2, idx_node))
 
+    # Selecting the third node in final list
     idx_node, levels_node = get_node_indices_and_levels(S[2])
     dataset = generalize_values(values, idx_node, levels_node)
     if not check_k_anonymity(dataset, 5, idx_node):
