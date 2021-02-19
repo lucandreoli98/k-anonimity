@@ -704,7 +704,7 @@ if __name__ == '__main__':
         if i < 4:
             C, E = graph_generation(S, E)
         else:
-            print("\n----------------------RESULTS----------------------\n")
+            print("\n---------------------RESULTS---------------------\n")
             print(S)
 
     # Check k-anonymity of final nodes
