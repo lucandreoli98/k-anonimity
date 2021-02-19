@@ -508,10 +508,10 @@ def graph_generation(nodes: np.ndarray, edges: np.ndarray):
         ith iteration generates generalized nodes composed of n QI
 
     At each iteration will be generated a set of direct edges
-    connecting the new nodes' set
+    connecting the new set of nodes
 
-    In the end only nodes satisfying K-anonymity wil be taken and
-    as consequence on the edges
+    In the end only nodes satisfying K-anonymity will be taken and
+    as consequence on the edges, they will be taken to create the latters
 
     :param nodes: Matrix of generalized nodes
     :param edges: Connection between nodes
