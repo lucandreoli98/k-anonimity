@@ -206,7 +206,6 @@ def generalize_string(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
                 hierarchy = create_string_generalize_hierarchy(values_to_gen, qi_string_idx_to_gen)
             elif qi_string_idx_to_gen == 1:
                 hierarchy = create_string_generalize_hierarchy(values_to_gen, qi_string_idx_to_gen)
-                print(values_to_gen[0:10, 1])
             for j in range(values_to_gen.shape[0]):
                 for k in range(hierarchy.shape[0]):
                     if values_to_gen[j, qi_string_idx_to_gen] == hierarchy[k, 0]:
@@ -228,10 +227,11 @@ def generalize_string(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
 
 def check_strings_occ(data: np.ndarray, idx: int, threshold: int):
     """
-    Prints QIs of tuples' that occurs under a certain treshold,
+    Prints QIs of tuples' that occurs under a certain threshold,
     the number of those tuples,
-    the list of QI and the tuples that are over this treshold
-    and the list of QI and the tuples that are under this treshold
+    the list of QI and the tuples that are over this threshold
+    and the list of QI and the tuples that are under this threshold
+
     :param data: Entire Dataset
     :param idx: The QI passed by the user
     :param threshold: the number of tuples will be highlighted
@@ -257,7 +257,7 @@ def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
         plt.figure()
         plt.hist(data[:, idx], bins=np.unique(data[:, idx]).shape[0])
         plt.title(labels[idx] + " distribution")
-        plt.ylim([0, 100])
+        plt.ylim([0, 150])
         plt.show()
     elif idx in range(2, 5):
         data_of_data = []
@@ -271,7 +271,7 @@ def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
         plt.figure()
         plt.hist(np.uint16(data_of_data / 10000), bins=np.unique(np.uint16(data_of_data / 10000)).shape[0])
         plt.title(labels[idx] + " distribution")
-        plt.ylim([0, 100])
+        plt.ylim([0, 150])
         plt.xlim([1965, 2025])
         plt.grid()
         plt.show()
@@ -279,7 +279,7 @@ def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
         plt.figure()
         plt.hist(data[:, idx], bins=250)
         plt.title(labels[idx] + " distribution")
-        plt.ylim([0, 100])
+        plt.ylim([0, 150])
         plt.show()
 
 
@@ -306,10 +306,11 @@ def delete_outliers_of_data_before(data: np.ndarray, qi_inspect: int, threshold:
     """
     Delete tuples more distant from the average behavior of the Dataset by data
     before applying the generalization
+
     :param data: Entire Dataset
     :param qi_inspect: The index of the QI
     :param threshold: the number of tuples chosen as bind
-    :return: the list of the tuples to be deleted
+    :return: Dataset without deleted tuples
     """
     idx_to_del = []
     done = False
@@ -327,14 +328,16 @@ def delete_outliers_of_string_before(data: np.ndarray, qi_inspect: int):
     """
     Delete tuples more distant from the average behavior of the Dataset by Job
     before applying the generalization
+
     :param data: Entire Dataset
     :param qi_inspect: The index of the QI
-    :return: the list of the tuples to be deleted
+    :return: Dataset without deleted tuples
     """
     idx_to_del = []
+    tmp_first_gen = generalize_string(data, qi_inspect, 1)
     done = False
     for j in range(data.shape[0]):
-        if data[j, qi_inspect] == 'REAL' or data[j, qi_inspect] == 'STUDENT':
+        if tmp_first_gen[j, qi_inspect] == 'REAL' or tmp_first_gen[j, qi_inspect] == 'STUDENT':
             if not done:
                 idx_to_del = j
                 done = True
@@ -467,7 +470,7 @@ def get_node_indices_and_levels(nd: np.ndarray):
 def mark_all_direct_generalizations(id_node: int, marks: np.ndarray, edges: np.ndarray):
     """
     Finds all connected nodes (direct generalizations) by looking at edges matrix
-    :param id_node: Identifier of node from wich we have to find direct connected nodes
+    :param id_node: Identifier of node from which we have to find direct connected nodes
     :param marks: Vector representing directed generalization nodes
     :param edges: 2D list of connection between nodes
     :return: vector of marked nodes
@@ -495,9 +498,9 @@ def insert_direct_generalizations_of_node_into_queue(id_node: int, q: np.ndarray
 
 def graph_generation(nodes: np.ndarray, edges: np.ndarray):
     """
-    Refering to Incognito, it is the generation of Candidate Set of Nodes
+    Referring to Incognito, it is the generation of Candidate Set of Nodes
     where the subset of QI grows till generate Ci with composed of all
-    QI chosen for anonimization:
+    QI chosen for anonymization:
     ex. number of Qi = n
         1st iteration generates generalized nodes composed of 2 QI
         2nd iteration generates generalized nodes composed of 3 QI
@@ -507,12 +510,12 @@ def graph_generation(nodes: np.ndarray, edges: np.ndarray):
     At each iteration will be generated a set of direct edges
     connecting the new nodes' set
 
-    In the end only nodes satisfing K-anonimity wil be taken and
+    In the end only nodes satisfying K-anonymity wil be taken and
     as consequence on the edges
 
     :param nodes: Matrix of generalized nodes
-    :param edges: onnection between nodes
-    :return: Matrix of nodes satisfing k-an and relative edges
+    :param edges: Connection between nodes
+    :return: Matrix of nodes satisfying k-an and relative edges
     """
     result_nodes = []
     result_edges = []
@@ -617,22 +620,27 @@ if __name__ == '__main__':
     values = data2int(values, qi_idx[2:5])
 
     # Check
-    #print(fields)
-    check_strings_occ(values, 0, 100)
+    print(fields)
+
+    plot_graphs(values, fields, 0)
+    plot_graphs(values, fields, 1)
+
+    plot_graphs(values, fields, 2)
+    plot_graphs(values, fields, 3)
+    plot_graphs(values, fields, 4)
+
+    plot_graphs(generalize_string(values, 0, 1), fields, 0)
+    plot_graphs(generalize_string(values, 1, 1), fields, 1)
+
+    values = delete_outliers_of_data_before(values, 2, 19790000)
+    values = delete_outliers_of_string_before(values, 0)
 
     plot_graphs(generalize_string(values, 0, 1), fields, 0)
     plot_graphs(generalize_string(values, 1, 1), fields, 1)
 
     plot_graphs(values, fields, 2)
     plot_graphs(values, fields, 3)
-    plot_graphs(values, fields, 4)
-
-    values = delete_outliers_of_data_before(values, 2, 19890000)
-    values = delete_outliers_of_string_before(generalize_string(values, 0, 1), 0)
-    check_strings_occ(generalize_string(values, 0, 1), 0, 100)
-    plot_graphs(values, fields, 2)
-    plot_graphs(values, fields, 3)
-
+    '''
     # Algorithm
     [C, E] = start_tables_generation(qi_idx)
     S = C
@@ -667,9 +675,12 @@ if __name__ == '__main__':
                     S = np.delete(S, np.where(S[:, 0] == node[0]), 0)
                     E = np.delete(E, np.where(E[:, 0] == node[0]), 0)
                     E = np.delete(E, np.where(E[:, 1] == node[0]), 0)
+            else:
+                print("Marked")
         if i < 4:
             C, E = graph_generation(S, E)
         else:
+            print("\n----------------------RESULTS----------------------\n")
             print(S)
 
     for x in range(S.shape[0]):
@@ -679,3 +690,4 @@ if __name__ == '__main__':
         #    delete_outliers_after_incognito(dataset, 4, idx_node)
 
         print(check_k_anonymity(dataset, 2, idx_node))
+    '''
