@@ -227,7 +227,7 @@ def generalize_string(values_to_gen: np.ndarray, qi_string_idx_to_gen: int, leve
 
 def check_strings_occ(data: np.ndarray, idx: int, threshold: int):
     """
-    Prints QIs of tuples' that occurs under a certain threshold,
+    Prints QIs of tuples that occurs under a certain threshold,
     the number of those tuples,
     the list of QI and the tuples that are over this threshold
     and the list of QI and the tuples that are under this threshold
