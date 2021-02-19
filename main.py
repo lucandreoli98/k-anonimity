@@ -279,7 +279,6 @@ def plot_graphs(data: np.ndarray, labels: np.ndarray, idx: int):
         plt.figure()
         plt.hist(data[:, idx], bins=250)
         plt.title(labels[idx] + " distribution")
-        plt.ylim([0, 150])
         plt.show()
 
 
@@ -607,6 +606,31 @@ def graph_generation(nodes: np.ndarray, edges: np.ndarray):
     return result_nodes, final_edges
 
 
+def delete_outliers_after_incognito(data: np.ndarray, k: int, qi_indices: np.ndarray):
+    """
+    Deletes the tuples after the execution of Incognito that don't allow to reach the anonymization level
+    specified in parameter k
+    :param data: Entire anonymized dataset
+    :param k: k-anonymity that want to reach
+    :param qi_indices: QIs
+    :return: Dataset without the tuples deleted
+    """
+    c = Counter(str(e) for e in data[:, qi_indices])
+    to_eliminate = {t: count for t, count in c.items() if count < k}
+
+    idx_to_del = []
+    done = False
+    for key in to_eliminate:
+        for j in range(data.shape[0]):
+            if str(data[j, qi_indices]) == str(key):
+                if not done:
+                    idx_to_del = j
+                    done = True
+                else:
+                    idx_to_del = np.append(idx_to_del, j)
+    return np.delete(data, idx_to_del, axis=0)
+
+
 if __name__ == '__main__':
     # Quasi-identifier indices
     qi_idx = [0, 1, 2, 3, 4]
@@ -621,7 +645,7 @@ if __name__ == '__main__':
 
     # Check
     print(fields)
-
+    '''
     plot_graphs(values, fields, 0)
     plot_graphs(values, fields, 1)
 
@@ -631,10 +655,10 @@ if __name__ == '__main__':
 
     plot_graphs(generalize_string(values, 0, 1), fields, 0)
     plot_graphs(generalize_string(values, 1, 1), fields, 1)
-
-    values = delete_outliers_of_data_before(values, 2, 19790000)
+    '''
+    values = delete_outliers_of_data_before(values, 2, 19890000)
     values = delete_outliers_of_string_before(values, 0)
-
+    '''
     plot_graphs(generalize_string(values, 0, 1), fields, 0)
     plot_graphs(generalize_string(values, 1, 1), fields, 1)
 
@@ -686,8 +710,11 @@ if __name__ == '__main__':
     for x in range(S.shape[0]):
         idx_node, levels_node = get_node_indices_and_levels(S[x])
         dataset = generalize_values(values, idx_node, levels_node)
-        # if not check_k_anonymity(dataset, 4, idx_node):
-        #    delete_outliers_after_incognito(dataset, 4, idx_node)
 
         print(check_k_anonymity(dataset, 2, idx_node))
-    '''
+
+    idx_node, levels_node = get_node_indices_and_levels(S[2])
+    dataset = generalize_values(values, idx_node, levels_node)
+    if not check_k_anonymity(dataset, 5, idx_node):
+        dataset = delete_outliers_after_incognito(dataset, 5, idx_node)
+        print(check_k_anonymity(dataset, 5, idx_node))
