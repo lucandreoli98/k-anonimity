@@ -743,29 +743,28 @@ if __name__ == '__main__':
                 print("\n---------------------RESULTS---------------------\n")
                 print(S)
 
-        '''
         # Check k-anonymity of final nodes
         for x in range(S.shape[0]):
-           idx_node, levels_node = get_node_indices_and_levels(S[x])
-           dataset = generalize_values(values, idx_node, levels_node)
-        
-           print(check_k_anonymity(dataset, 2, idx_node))
-        
+            idx_node, levels_node = get_node_indices_and_levels(S[x])
+            dataset = generalize_values(values, idx_node, levels_node)
+
+            print(check_k_anonymity(dataset, 2, idx_node))
+
         # Selecting the third node in final list
         idx_node, levels_node = get_node_indices_and_levels(S[2])
         dataset = generalize_values(values, idx_node, levels_node)
-        
+
         # Reach 5-anonymity by deleting tuples with low occurrence
         if not check_k_anonymity(dataset, 5, idx_node):
-           dataset = delete_outliers_after_incognito(dataset, 5, idx_node)
-           print(check_k_anonymity(dataset, 5, idx_node))
-        
+            dataset = delete_outliers_after_incognito(dataset, 5, idx_node)
+            print(check_k_anonymity(dataset, 5, idx_node))
+
         # Check the difference..
         print(values[0:15])
         print(dataset[0:15])
-        
+
         plot_graph_of_tuple_distribution(dataset, qi_idx)
-        '''
+
         if test_time == 2:
             elapsed_time = time.time() - start_time
         else:
