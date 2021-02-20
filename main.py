@@ -294,7 +294,6 @@ def check_k_anonymity(data: np.ndarray, k: int, qi_indices=None):
     print(Counter(str(e) for e in data[:, qi_indices]))
 
     occurrences = list(Counter(str(e) for e in data[:, qi_indices]).values())
-    print(occurrences)
     for j in range(len(occurrences)):
         if occurrences[j] < k:
             return False
@@ -352,6 +351,7 @@ def start_tables_generation(qi_indices=None):
     by the generalization levels of the subset of attributes
     and the relative edges that define direct generalization
     hierarchy from less gen. node to the most gen.
+
     :param qi_indices:
     :return: nodes and edges of the tree in matrix and vector form
     """
@@ -388,6 +388,7 @@ def start_tables_generation(qi_indices=None):
 def find_roots(table_of_nodes: np.ndarray, table_of_edges: np.ndarray):
     """
     Finds all the nodes without incoming edges
+
     :param table_of_nodes: Matrix of generalized nodes
     :param table_of_edges: Matrix of edges related to generalized nodes
     :return: matrix of root nodes
@@ -411,6 +412,7 @@ def insert_roots_into_queue(rt: np.ndarray):
     """
     Insert all the nodes that has no direct incoming edges
     into queue
+
     :param rt: vector of root nodes
     :return: vector queue
     """
@@ -427,6 +429,7 @@ def insert_roots_into_queue(rt: np.ndarray):
 def generalize_values(data: np.ndarray, qi_indices: np.ndarray, levels: np.ndarray):
     """
     Generalize all values identified by certain specific QIs
+
     :param data: Entire Dataset
     :param qi_indices: One or a list of QI for generalization operation
     :param levels: Desired level of generalization
@@ -449,7 +452,8 @@ def generalize_values(data: np.ndarray, qi_indices: np.ndarray, levels: np.ndarr
 
 def get_node_indices_and_levels(nd: np.ndarray):
     """
-    Retrieve QIs and their generalization level
+    Retrieve QIs and their generalization level from the node in input
+
     :param nd: Matrix of generalized nodes
     :return: vector of QIs and their levels
     """
@@ -469,6 +473,7 @@ def get_node_indices_and_levels(nd: np.ndarray):
 def mark_all_direct_generalizations(id_node: int, marks: np.ndarray, edges: np.ndarray):
     """
     Finds all connected nodes (direct generalizations) by looking at edges matrix
+
     :param id_node: Identifier of node from which we have to find direct connected nodes
     :param marks: Vector representing directed generalization nodes
     :param edges: 2D list of connection between nodes
@@ -483,6 +488,7 @@ def mark_all_direct_generalizations(id_node: int, marks: np.ndarray, edges: np.n
 def insert_direct_generalizations_of_node_into_queue(id_node: int, q: np.ndarray, edges: np.ndarray, nodes: np.ndarray):
     """
     Once found direct generalizations (nodes) of the node given as parameter (ID), then put them in the queue
+
     :param id_node: Node identifier to start search
     :param q: List of nodes
     :param edges: Connection between nodes
@@ -610,6 +616,7 @@ def delete_outliers_after_incognito(data: np.ndarray, k: int, qi_indices: np.nda
     """
     Deletes the tuples after the execution of Incognito that don't allow to reach the anonymization level
     specified in parameter k
+
     :param data: Entire anonymized dataset
     :param k: k-anonymity that want to reach
     :param qi_indices: QIs
@@ -631,7 +638,24 @@ def delete_outliers_after_incognito(data: np.ndarray, k: int, qi_indices: np.nda
     return np.delete(data, idx_to_del, axis=0)
 
 
+def plot_graph_of_tuple_distribution(data: np.ndarray, qi_indices=np.ndarray):
+    c = Counter(str(e) for e in data[:, qi_indices])
+    to_plot = [str(e) for e in data[:, qi_indices]]
+
+    plt.figure()
+    plt.hist(to_plot, bins=len(c))
+    plt.title("Dataset tuples distribution")
+    plt.show()
+
+    plt.figure()
+    plt.hist(to_plot, bins=len(c))
+    plt.title("Dataset tuples distribution - Check k-anonymity")
+    plt.ylim([0, 15])
+    plt.show()
+
+
 if __name__ == '__main__':
+
     # Quasi-identifier indices
     qi_idx = [0, 1, 2, 3, 4]
 
@@ -646,6 +670,7 @@ if __name__ == '__main__':
     # Check
     print(fields)
 
+    # Plotting of frequency of QI graph
     plot_graphs(values, fields, 0)
     plot_graphs(values, fields, 1)
 
@@ -665,10 +690,10 @@ if __name__ == '__main__':
     plot_graphs(values, fields, 2)
     plot_graphs(values, fields, 3)
 
-    # Algorithm
+    # INCOGNITO
+    k_anon = 2
     [C, E] = start_tables_generation(qi_idx)
     S = C
-    # print(C)
 
     for i in range(fields.shape[0] - 1):
         S = C
@@ -690,15 +715,16 @@ if __name__ == '__main__':
             if not node[0] in marked:
                 idx_node, levels_node = get_node_indices_and_levels(node)
                 dataset = generalize_values(values, idx_node, levels_node)
-                if check_k_anonymity(dataset, 2, idx_node):
-                    print("Respect 2-anonymity")
+                if check_k_anonymity(dataset, k_anon, idx_node):
                     marked = mark_all_direct_generalizations(node[0], np.array(marked, dtype='int'), E)
+                    print("Respect " + str(k_anon) + "-anonymity, all direct generalization marked.")
                 else:
-                    print("NOT respect 2-anonymity")
                     queue = insert_direct_generalizations_of_node_into_queue(node[0], queue, E, S)
                     S = np.delete(S, np.where(S[:, 0] == node[0]), 0)
                     E = np.delete(E, np.where(E[:, 0] == node[0]), 0)
                     E = np.delete(E, np.where(E[:, 1] == node[0]), 0)
+                    print("NOT respect " + str(k_anon) + "-anonymity, discarded.")
+
             else:
                 print("Marked")
         if i < 4:
@@ -717,6 +743,15 @@ if __name__ == '__main__':
     # Selecting the third node in final list
     idx_node, levels_node = get_node_indices_and_levels(S[2])
     dataset = generalize_values(values, idx_node, levels_node)
+
+    # Reach 5-anonymity by deleting tuples with low occurrence
     if not check_k_anonymity(dataset, 5, idx_node):
         dataset = delete_outliers_after_incognito(dataset, 5, idx_node)
         print(check_k_anonymity(dataset, 5, idx_node))
+
+    # Check the difference..
+    print(values[0:15])
+    print(dataset[0:15])
+
+    plot_graph_of_tuple_distribution(dataset, qi_idx)
+
