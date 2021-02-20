@@ -639,6 +639,12 @@ def delete_outliers_after_incognito(data: np.ndarray, k: int, qi_indices: np.nda
 
 
 def plot_graph_of_tuple_distribution(data: np.ndarray, qi_indices=np.ndarray):
+    """
+    Plots the distribution of the final anonymized tuples of the dataset
+
+    :param data: Entire anonymized dataset
+    :param qi_indices: QI indices
+    """
     c = Counter(str(e) for e in data[:, qi_indices])
     to_plot = [str(e) for e in data[:, qi_indices]]
 
