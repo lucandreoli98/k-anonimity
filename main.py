@@ -3,6 +3,7 @@ import pandas as pd
 import re
 import matplotlib.pyplot as plt
 from collections import Counter
+import time
 
 
 def import_csv_dataset():
@@ -696,68 +697,84 @@ if __name__ == '__main__':
     plot_graphs(values, fields, 2)
     plot_graphs(values, fields, 3)
 
-    # INCOGNITO
-    k_anon = 2
-    [C, E] = start_tables_generation(qi_idx)
-    S = C
-
-    for i in range(fields.shape[0] - 1):
+    elapsed_time = []
+    for test_time in range(2, 11):
+        start_time = time.time()
+        # INCOGNITO
+        k_anon = test_time
+        [C, E] = start_tables_generation(qi_idx)
         S = C
-        roots = find_roots(C, E)
 
-        queue = insert_roots_into_queue(roots)
-        marked = []
+        for i in range(fields.shape[0] - 1):
+            S = C
+            roots = find_roots(C, E)
 
-        while queue.shape[0] > 0:
-            node = queue[0, :]
+            queue = insert_roots_into_queue(roots)
+            marked = []
 
-            print("-------------------------------------------------------------")
-            print("Queue:")
-            print(queue)
-            print("Extracted node: ", node)
+            while queue.shape[0] > 0:
+                node = queue[0, :]
 
-            queue = np.delete(queue, 0, 0)
+                print("-------------------------------------------------------------")
+                print("Queue:")
+                print(queue)
+                print("Extracted node: ", node)
 
-            if not node[0] in marked:
-                idx_node, levels_node = get_node_indices_and_levels(node)
-                dataset = generalize_values(values, idx_node, levels_node)
-                if check_k_anonymity(dataset, k_anon, idx_node):
-                    marked = mark_all_direct_generalizations(node[0], np.array(marked, dtype='int'), E)
-                    print("Respect " + str(k_anon) + "-anonymity, all direct generalization marked.")
+                queue = np.delete(queue, 0, 0)
+
+                if not node[0] in marked:
+                    idx_node, levels_node = get_node_indices_and_levels(node)
+                    dataset = generalize_values(values, idx_node, levels_node)
+                    if check_k_anonymity(dataset, k_anon, idx_node):
+                        marked = mark_all_direct_generalizations(node[0], np.array(marked, dtype='int'), E)
+                        print("Respect " + str(k_anon) + "-anonymity, all direct generalization marked.")
+                    else:
+                        queue = insert_direct_generalizations_of_node_into_queue(node[0], queue, E, S)
+                        S = np.delete(S, np.where(S[:, 0] == node[0]), 0)
+                        E = np.delete(E, np.where(E[:, 0] == node[0]), 0)
+                        E = np.delete(E, np.where(E[:, 1] == node[0]), 0)
+                        print("NOT respect " + str(k_anon) + "-anonymity, discarded.")
+
                 else:
-                    queue = insert_direct_generalizations_of_node_into_queue(node[0], queue, E, S)
-                    S = np.delete(S, np.where(S[:, 0] == node[0]), 0)
-                    E = np.delete(E, np.where(E[:, 0] == node[0]), 0)
-                    E = np.delete(E, np.where(E[:, 1] == node[0]), 0)
-                    print("NOT respect " + str(k_anon) + "-anonymity, discarded.")
-
+                    print("Marked")
+            if i < 4:
+                C, E = graph_generation(S, E)
             else:
-                print("Marked")
-        if i < 4:
-            C, E = graph_generation(S, E)
-        else:
-            print("\n---------------------RESULTS---------------------\n")
-            print(S)
+                print("\n---------------------RESULTS---------------------\n")
+                print(S)
 
-    # Check k-anonymity of final nodes
-    for x in range(S.shape[0]):
-        idx_node, levels_node = get_node_indices_and_levels(S[x])
+        '''
+        # Check k-anonymity of final nodes
+        for x in range(S.shape[0]):
+           idx_node, levels_node = get_node_indices_and_levels(S[x])
+           dataset = generalize_values(values, idx_node, levels_node)
+        
+           print(check_k_anonymity(dataset, 2, idx_node))
+        
+        # Selecting the third node in final list
+        idx_node, levels_node = get_node_indices_and_levels(S[2])
         dataset = generalize_values(values, idx_node, levels_node)
+        
+        # Reach 5-anonymity by deleting tuples with low occurrence
+        if not check_k_anonymity(dataset, 5, idx_node):
+           dataset = delete_outliers_after_incognito(dataset, 5, idx_node)
+           print(check_k_anonymity(dataset, 5, idx_node))
+        
+        # Check the difference..
+        print(values[0:15])
+        print(dataset[0:15])
+        
+        plot_graph_of_tuple_distribution(dataset, qi_idx)
+        '''
+        if test_time == 2:
+            elapsed_time = time.time() - start_time
+        else:
+            elapsed_time = np.append(elapsed_time, time.time() - start_time)
 
-        print(check_k_anonymity(dataset, 2, idx_node))
-
-    # Selecting the third node in final list
-    idx_node, levels_node = get_node_indices_and_levels(S[2])
-    dataset = generalize_values(values, idx_node, levels_node)
-
-    # Reach 5-anonymity by deleting tuples with low occurrence
-    if not check_k_anonymity(dataset, 5, idx_node):
-        dataset = delete_outliers_after_incognito(dataset, 5, idx_node)
-        print(check_k_anonymity(dataset, 5, idx_node))
-
-    # Check the difference..
-    print(values[0:15])
-    print(dataset[0:15])
-
-    plot_graph_of_tuple_distribution(dataset, qi_idx)
-
+    plt.figure()
+    plt.title("Execution time by k")
+    plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8], [2, 3, 4, 5, 6, 7, 8, 9, 10])
+    plt.xlabel('k')
+    plt.ylabel('Time elapsed (s)')
+    plt.plot(elapsed_time)
+    plt.show()
